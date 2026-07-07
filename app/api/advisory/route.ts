@@ -1,24 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 import { FALLBACK_ADVISORY, type Lang } from "@/lib/data";
+import { LANG_NAME_FOR_PROMPT } from "@/lib/i18n-full";
 
-const LANG_NAME: Record<Lang, string> = {
-  hi: "Hindi (Devanagari script)",
-  en: "simple Indian English",
-  mr: "Marathi (Devanagari script)",
-  te: "Telugu (Telugu script)",
-};
+// Fallback advisories exist for hi/en/mr/te; every other language code degrades to Hindi.
+function fallbackText(lang: string, channel: "ivr" | "sms"): string {
+  const known: Lang = lang === "hi" || lang === "en" || lang === "mr" || lang === "te" ? lang : "hi";
+  return FALLBACK_ADVISORY[known][channel];
+}
 
 export async function POST(req: NextRequest) {
   const { query, lang = "hi", channel = "ivr" } = (await req.json()) as {
     query: string;
-    lang: Lang;
+    lang: string;
     channel: "ivr" | "sms";
   };
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ text: FALLBACK_ADVISORY[lang][channel], source: "fallback" });
+    return NextResponse.json({ text: fallbackText(lang, channel), source: "fallback" });
   }
 
   const channelRules =
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
       contents: `A farmer contacted the KisanVaani crop advisory line. Their message (may be shorthand SMS code or spoken sentence): "${query}"`,
       config: {
-        systemInstruction: `You are KisanVaani, an expert Indian agricultural extension advisor (like a Krishi Vigyan Kendra scientist). You give practical, safe, low-cost advice suited to smallholder farmers in India. Prefer IPM/organic first, then chemical options with exact dosages. Respond ONLY in ${LANG_NAME[lang]}.\n${channelRules}`,
+        systemInstruction: `You are KisanVaani, an expert Indian agricultural extension advisor (like a Krishi Vigyan Kendra scientist). You give practical, safe, low-cost advice suited to smallholder farmers in India. Prefer IPM/organic first, then chemical options with exact dosages. Respond ONLY in ${LANG_NAME_FOR_PROMPT[lang] || LANG_NAME_FOR_PROMPT.hi}.\n${channelRules}`,
         temperature: 0.4,
       },
     });
@@ -50,6 +50,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ text, source: "gemini" });
   } catch (err) {
     console.error("advisory gemini error:", err instanceof Error ? err.message : err);
-    return NextResponse.json({ text: FALLBACK_ADVISORY[lang][channel], source: "fallback" });
+    return NextResponse.json({ text: fallbackText(lang, channel), source: "fallback" });
   }
 }

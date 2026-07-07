@@ -2,12 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { LANGS, SAMPLE_QUERIES, CASE_STUDIES, type Lang } from "@/lib/data";
-import { T } from "@/lib/i18n";
+import { Mic, Square, CheckCircle2, Languages } from "lucide-react";
+import { CASE_STUDIES } from "@/lib/data";
+import { DISTRICTS } from "@/lib/districts";
+import { LANGS_FULL, T_FULL, SAMPLE_QUERIES_FULL } from "@/lib/i18n-full";
 import { speak, stopSpeaking, createRecognizer } from "@/lib/speech";
+import { startRecording, stopRecording } from "@/lib/recorder";
+import type { VoiceResult, MandiResponse } from "@/lib/types";
 
 type Mode = "call" | "sms" | "photo";
-type CallState = "idle" | "dialing" | "menu" | "listening" | "thinking" | "answered";
+type CallState = "idle" | "dialing" | "menu" | "listening" | "mandi" | "thinking" | "answered";
 type Bubble = { who: "ivr" | "farmer"; text: string };
 type SmsMsg = { who: "farmer" | "kisanvaani"; text: string };
 
@@ -34,11 +38,25 @@ const MODES: { id: Mode; icon: string; label: string; sub: string }[] = [
   { id: "photo", icon: "📷", label: "Photo Diagnosis", sub: "Via relay worker" },
 ];
 
+// Keypad-2 mandi flow: crops + state from the pilot's first district (Sehore, MP).
+const MANDI_CROPS: string[] = DISTRICTS[0]?.crops ?? ["Wheat", "Soybean", "Cotton"];
+const MANDI_STATE = DISTRICTS[0]?.state ?? "Madhya Pradesh";
+
+// Cached mandi quotes so the flow works even while /api/mandi is unavailable.
+const CACHED_MANDI: Record<string, { market: string; modal: number }> = {
+  Wheat: { market: "Sehore", modal: 2450 },
+  Soybean: { market: "Ashta", modal: 4720 },
+  Cotton: { market: "Khargone", modal: 7040 },
+};
+
 export default function DemoClient() {
-  const [lang, setLang] = useState<Lang>("hi");
+  const [lang, setLang] = useState<string>("hi"); // 12 language codes + "auto"
   const [mode, setMode] = useState<Mode>("call");
-  const bcp47 = LANGS.find((l) => l.code === lang)!.bcp47;
-  const t = T[lang];
+  const uiLang = lang === "auto" ? "hi" : lang; // auto mode falls back to Hindi UI strings
+  const langMeta = LANGS_FULL.find((l) => l.code === uiLang) ?? LANGS_FULL[0];
+  const bcp47 = langMeta.bcp47;
+  const t = T_FULL[uiLang] ?? T_FULL.hi;
+  const samples = SAMPLE_QUERIES_FULL[uiLang] ?? SAMPLE_QUERIES_FULL.hi;
 
   // ---- Call state ----
   const [callState, setCallState] = useState<CallState>("idle");
@@ -49,6 +67,12 @@ export default function DemoClient() {
   const [callInput, setCallInput] = useState("");
   const recRef = useRef<{ start: () => void; stop: () => void } | null>(null);
   const screenRef = useRef<HTMLDivElement>(null);
+
+  // ---- Auto language-detect state ----
+  const [recording, setRecording] = useState(false);
+  const [micDenied, setMicDenied] = useState(false);
+  const [detected, setDetected] = useState<{ code: string; name: string } | null>(null);
+  const [ttsNote, setTtsNote] = useState(false);
 
   // ---- SMS state ----
   const [smsThread, setSmsThread] = useState<SmsMsg[]>([]);
@@ -62,6 +86,7 @@ export default function DemoClient() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [activeCase, setActiveCase] = useState<string | null>(null);
   const [speaking, setSpeaking] = useState(false);
+  const [kvkTicket, setKvkTicket] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -80,11 +105,16 @@ export default function DemoClient() {
   const endCall = useCallback(() => {
     stopSpeaking();
     recRef.current?.stop?.();
+    void stopRecording(); // safe no-op when not recording
     setCallState("idle");
     setBubbles([]);
     setCallSource(null);
     setMicOn(false);
     setCallInput("");
+    setRecording(false);
+    setMicDenied(false);
+    setDetected(null);
+    setTtsNote(false);
   }, []);
 
   // Reset transient state when switching language or mode
@@ -92,6 +122,7 @@ export default function DemoClient() {
     endCall();
     stopSpeaking();
     setSpeaking(false);
+    setKvkTicket(null);
   }, [lang, mode, endCall]);
 
   const startCall = () => {
@@ -109,8 +140,16 @@ export default function DemoClient() {
     if (k === "1") {
       stopSpeaking();
       setCallState("listening");
-      setBubbles((b) => [...b, { who: "farmer", text: `[ ${k} ]` }, { who: "ivr", text: t.ivrAskProblem }]);
-      speak(t.ivrAskProblem, bcp47);
+      const ask = lang === "auto" ? `${t.ivrAskProblem} ${t.recordHint}` : t.ivrAskProblem;
+      setBubbles((b) => [...b, { who: "farmer", text: `[ ${k} ]` }, { who: "ivr", text: ask }]);
+      speak(ask, bcp47);
+    }
+    if (k === "2") {
+      stopSpeaking();
+      setCallState("mandi");
+      const ask = `${t.mandiPrices}: ${MANDI_CROPS.join(" / ")}?`;
+      setBubbles((b) => [...b, { who: "farmer", text: `[ ${k} ]` }, { who: "ivr", text: ask }]);
+      speak(ask, bcp47);
     }
   };
 
@@ -123,7 +162,7 @@ export default function DemoClient() {
       const res = await fetch("/api/advisory", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: text, lang, channel: "ivr" }),
+        body: JSON.stringify({ query: text, lang: uiLang, channel: "ivr" }),
       });
       const data = await res.json();
       setBubbles((b) => [...b, { who: "ivr", text: data.text }]);
@@ -134,6 +173,80 @@ export default function DemoClient() {
       setCallState("listening");
     }
     setCallInput("");
+  };
+
+  // ---- AUTO MODE: record any language → /api/voice ----
+  const toggleRecord = async () => {
+    if (recording) {
+      setRecording(false);
+      const clip = await stopRecording();
+      if (!clip) return;
+      setCallState("thinking");
+      try {
+        const res = await fetch("/api/voice", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ audio: clip.base64, mimeType: clip.mimeType }),
+          signal: AbortSignal.timeout(30000),
+        });
+        const data = (await res.json()) as VoiceResult;
+        setBubbles((b) => [...b, { who: "farmer", text: data.transcript }, { who: "ivr", text: data.replyText }]);
+        setDetected({ code: data.detectedLangCode, name: data.detectedLangName });
+        setCallSource(data.source);
+        setCallState("answered");
+        const prefix = (data.detectedLangCode.split("-")[0] || "hi").toLowerCase();
+        const voices = window.speechSynthesis?.getVoices() ?? [];
+        const hasVoice = voices.some((v) => v.lang.replace("_", "-").toLowerCase().startsWith(prefix));
+        setTtsNote(!hasVoice);
+        speak(data.replyText, data.detectedLangCode);
+      } catch {
+        setCallState("listening");
+      }
+      return;
+    }
+    setMicDenied(false);
+    const ok = await startRecording();
+    if (!ok) {
+      setMicDenied(true);
+      return;
+    }
+    setRecording(true);
+  };
+
+  // ---- KEYPAD 2: mandi bhav ----
+  const askMandi = async (crop: string) => {
+    stopSpeaking();
+    setBubbles((b) => [...b, { who: "farmer", text: crop }]);
+    setCallState("thinking");
+    const cached = CACHED_MANDI[crop] ?? { market: "Sehore", modal: 2450 };
+    let market = cached.market;
+    let modal = cached.modal;
+    let source = "cached";
+    try {
+      const res = await fetch(
+        `/api/mandi?crop=${encodeURIComponent(crop)}&state=${encodeURIComponent(MANDI_STATE)}`,
+        { signal: AbortSignal.timeout(8000) }
+      );
+      if (res.ok) {
+        const data = (await res.json()) as MandiResponse;
+        const row = data.rows?.[0];
+        if (row && row.modalPrice > 0) {
+          market = row.market;
+          modal = row.modalPrice;
+          source = data.source;
+        }
+      }
+    } catch {
+      /* keep cached quote */
+    }
+    const line =
+      uiLang === "en"
+        ? `${crop} price: ₹${modal} per quintal at ${market} mandi.`
+        : `${crop} ka bhav: ${market} mandi mein ₹${modal} prati quintal.`;
+    setBubbles((b) => [...b, { who: "ivr", text: line }]);
+    setCallSource(source);
+    setCallState("answered");
+    speak(line, bcp47);
   };
 
   const toggleMic = () => {
@@ -162,7 +275,7 @@ export default function DemoClient() {
       const res = await fetch("/api/advisory", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: text, lang, channel: "sms" }),
+        body: JSON.stringify({ query: text, lang: uiLang, channel: "sms" }),
       });
       const data = await res.json();
       setSmsThread((th) => [...th, { who: "kisanvaani", text: data.text }]);
@@ -180,6 +293,7 @@ export default function DemoClient() {
     setActiveCase(id);
     setPhotoPreview(null);
     setDiag(null);
+    setKvkTicket(null);
     setDiagLoading(true);
     setTimeout(() => {
       setDiag({ ...c.diagnosis, is_plant: true, source: "case-study" });
@@ -192,6 +306,7 @@ export default function DemoClient() {
     setSpeaking(false);
     setActiveCase(null);
     setDiag(null);
+    setKvkTicket(null);
     const reader = new FileReader();
     reader.onload = async () => {
       const dataUrl = reader.result as string;
@@ -203,7 +318,7 @@ export default function DemoClient() {
         const res = await fetch("/api/diagnose", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image: base64, mimeType, lang }),
+          body: JSON.stringify({ image: base64, mimeType, lang: uiLang }),
         });
         setDiag(await res.json());
       } catch {
@@ -249,22 +364,40 @@ export default function DemoClient() {
           </p>
         </header>
 
-        {/* Language picker */}
-        <div className="flex flex-wrap items-center gap-2 mb-6">
-          <span className="text-sm text-ink-soft mr-1">Farmer&rsquo;s language:</span>
-          {LANGS.map((l) => (
+        {/* Language picker — 12 scheduled languages + auto-detect */}
+        <div className="mb-6 max-w-3xl">
+          <div className="text-sm text-ink-soft mb-2">Farmer&rsquo;s language:</div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {LANGS_FULL.map((l) => (
+              <button
+                key={l.code}
+                onClick={() => setLang(l.code)}
+                className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+                  lang === l.code
+                    ? "bg-forest text-paper border-forest"
+                    : "bg-white text-ink-soft border-forest/20 hover:border-forest/50"
+                }`}
+              >
+                {l.native}
+              </button>
+            ))}
             <button
-              key={l.code}
-              onClick={() => setLang(l.code)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium border transition ${
-                lang === l.code
-                  ? "bg-forest text-paper border-forest"
-                  : "bg-white text-ink-soft border-forest/20 hover:border-forest/50"
+              onClick={() => setLang("auto")}
+              className={`px-3 py-1 rounded-full text-xs font-semibold border transition ${
+                lang === "auto"
+                  ? "bg-turmeric text-white border-turmeric"
+                  : "bg-turmeric-soft/40 text-ink border-turmeric/40 hover:border-turmeric"
               }`}
             >
-              {l.native}
+              🎙 Auto (any language)
             </button>
-          ))}
+          </div>
+          {lang === "auto" && (
+            <div className="text-xs text-ink-soft mt-2 rise">
+              <Languages className="inline w-3.5 h-3.5 -mt-0.5 mr-1 text-turmeric" aria-hidden />
+              Speak in <b>any Indian language</b> — Gemini detects it automatically and replies in the same language.
+            </div>
+          )}
         </div>
 
         {/* Mode tabs */}
@@ -310,7 +443,7 @@ export default function DemoClient() {
                           <div className="text-xs text-forest/60">1800-180-KISAN</div>
                         </div>
                       )}
-                      {(callState === "menu" || callState === "listening" || callState === "thinking" || callState === "answered") && (
+                      {(callState === "menu" || callState === "listening" || callState === "mandi" || callState === "thinking" || callState === "answered") && (
                         <div className="space-y-2">
                           <div className="text-center text-[10px] text-forest/60 border-b border-forest/10 pb-1 mb-2">
                             {t.connected} · 00:{String(bubbles.length * 7 + 12).padStart(2, "0")}
@@ -326,8 +459,11 @@ export default function DemoClient() {
                           {callState === "thinking" && (
                             <div className="bg-white/80 rounded-lg px-2.5 py-1.5 max-w-[90%] text-ink-soft blink">{t.ivrThinking}</div>
                           )}
-                          {callState === "listening" && micOn && (
+                          {callState === "listening" && lang !== "auto" && micOn && (
                             <div className="text-center text-clay text-xs blink mt-2">🎙 {t.speakNow}</div>
+                          )}
+                          {callState === "listening" && lang === "auto" && recording && (
+                            <div className="text-center text-clay text-xs blink mt-2">● REC — {t.speakNow}</div>
                           )}
                         </div>
                       )}
@@ -391,13 +527,14 @@ export default function DemoClient() {
                       key={k}
                       onClick={() => pressKey(k)}
                       className={`keypad-btn rounded-md py-1.5 text-sm font-semibold border ${
-                        k === "1" && callState === "menu"
+                        (k === "1" || k === "2") && callState === "menu"
                           ? "bg-turmeric-soft/90 text-ink border-turmeric"
                           : "bg-zinc-700 text-zinc-200 border-zinc-600"
                       }`}
                     >
                       {k}
                       {k === "1" && <span className="block text-[8px] font-normal -mt-0.5">फसल</span>}
+                      {k === "2" && <span className="block text-[8px] font-normal -mt-0.5">भाव</span>}
                     </button>
                   ))}
                 </div>
@@ -454,13 +591,43 @@ export default function DemoClient() {
             )}
 
             {/* Under-phone inputs for call & sms */}
-            {mode === "call" && callState === "listening" && (
+            {mode === "call" && callState === "listening" && lang === "auto" && (
+              <div className="mt-4 rounded-xl bg-white border border-forest/15 p-4 rise">
+                <div className="text-xs font-semibold text-ink-soft mb-3">🌐 {t.recordHint}</div>
+                <button
+                  onClick={toggleRecord}
+                  className={`w-full flex items-center justify-center gap-2 rounded-xl py-4 font-semibold text-base transition ${
+                    recording ? "bg-red-600 text-white blink" : "bg-turmeric text-white hover:bg-turmeric/90"
+                  }`}
+                >
+                  {recording ? (
+                    <>
+                      <Square className="w-5 h-5" aria-hidden /> Stop &amp; send
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="w-5 h-5" aria-hidden /> Hold the line — press &amp; speak
+                    </>
+                  )}
+                </button>
+                <div className="text-[11px] text-ink-soft text-center mt-2">
+                  Hindi, Tamil, Bhojpuri, Santali — any Indian language works. Gemini auto-detects it.
+                </div>
+                {micDenied && (
+                  <div className="text-xs text-clay text-center mt-2">
+                    Microphone unavailable or permission denied — allow mic access in the browser and try again.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {mode === "call" && callState === "listening" && lang !== "auto" && (
               <div className="mt-4 rounded-xl bg-white border border-forest/15 p-4 rise">
                 <div className="text-xs font-semibold text-ink-soft mb-2">
                   🎙 Farmer speaks {micSupported && "(use your mic, or tap a sample)"}:
                 </div>
                 <div className="flex flex-wrap gap-2 mb-3">
-                  {SAMPLE_QUERIES[lang].ivr.map((q) => (
+                  {samples.ivr.map((q) => (
                     <button
                       key={q}
                       onClick={() => submitProblem(q)}
@@ -493,10 +660,42 @@ export default function DemoClient() {
               </div>
             )}
 
+            {mode === "call" && callState === "mandi" && (
+              <div className="mt-4 rounded-xl bg-white border border-forest/15 p-4 rise">
+                <div className="text-xs font-semibold text-ink-soft mb-2">📈 {t.mandiPrices} — {MANDI_STATE}:</div>
+                <div className="flex flex-wrap gap-2">
+                  {MANDI_CROPS.map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => askMandi(c)}
+                      className="text-sm bg-leaf-mist text-forest rounded-full px-4 py-2 hover:bg-leaf/20 font-medium"
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+                <div className="text-[11px] text-ink-soft mt-2">Live Agmarknet prices — cached quote if the feed is down.</div>
+              </div>
+            )}
+
+            {mode === "call" && detected && (
+              <div className="mt-3 rise">
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-turmeric-soft/60 border border-turmeric/40 px-3 py-1.5 text-xs font-semibold text-ink">
+                  <Languages className="w-3.5 h-3.5 text-turmeric" aria-hidden />
+                  {t.detected} {detected.name}
+                </div>
+                {ttsNote && (
+                  <div className="text-[11px] text-ink-soft mt-1.5">
+                    (voice output available on Android for this language — showing text here)
+                  </div>
+                )}
+              </div>
+            )}
+
             {mode === "sms" && (
               <div className="mt-4 rounded-xl bg-white border border-forest/15 p-4">
                 <div className="flex flex-wrap gap-2 mb-3">
-                  {SAMPLE_QUERIES[lang].sms.map((q) => (
+                  {samples.sms.map((q) => (
                     <button
                       key={q}
                       onClick={() => sendSms(q)}
@@ -575,7 +774,7 @@ export default function DemoClient() {
                       onClick={listenSummary}
                       className="mt-4 w-full rounded-xl bg-forest text-paper py-3 font-semibold hover:bg-leaf transition"
                     >
-                      {speaking ? t.stop : `${t.listen} — voice note (${LANGS.find((l) => l.code === lang)!.native})`}
+                      {speaking ? t.stop : `${t.listen} — voice note (${langMeta.native})`}
                     </button>
                     <div className="text-[11px] text-ink-soft text-center mt-1">
                       ↑ this is what the farmer receives on their phone — no reading required
@@ -612,6 +811,23 @@ export default function DemoClient() {
                       <span><b>Urgency:</b> {diag.urgency}</span>
                     </div>
 
+                    {/* Escalate to human expert (RSK/KVK) */}
+                    {!kvkTicket ? (
+                      <button
+                        onClick={() => setKvkTicket(`RSK-${1000 + Math.floor(Math.random() * 9000)}`)}
+                        className="mt-4 w-full rounded-xl border-2 border-forest/30 text-forest py-3 text-sm font-semibold hover:bg-leaf-mist/40 transition"
+                      >
+                        👨‍🌾 Send to KVK / Rythu Seva Kendra expert
+                      </button>
+                    ) : (
+                      <div className="mt-4 flex items-start gap-2 rounded-xl bg-leaf-mist/60 border border-leaf/40 p-3 text-sm text-forest rise">
+                        <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" aria-hidden />
+                        <span>
+                          <b>Ticket {kvkTicket} created</b> · KVK Sehore · reply within 48h SLA
+                        </span>
+                      </div>
+                    )}
+
                     <div className="text-[11px] text-ink-soft mt-3 text-right">
                       {diag.source === "gemini" ? "⚡ Live Gemini 2.5 Flash diagnosis" : diag.source === "case-study" ? "📁 Field case study (cached)" : "📁 Cached fallback"}
                     </div>
@@ -626,7 +842,7 @@ export default function DemoClient() {
               {mode === "call" && (
                 <ol className="space-y-2.5 text-sm">
                   <li><b>1 · Missed-call / toll-free IVR</b> — farmer dials 1800-180-KISAN; Exotel/Twilio Voice picks up. Zero cost to farmer.</li>
-                  <li><b>2 · Speech → text</b> — Bhashini / Google Cloud Speech ASR in 12+ Indic languages <span className="text-leaf-mist/70">(demo uses your browser&rsquo;s mic + speech engine)</span>.</li>
+                  <li><b>2 · Speech → text</b> — {lang === "auto" ? <>Gemini ingests the raw audio, auto-detects the language and transcribes it — no language menu needed <span className="text-leaf-mist/70">(the demo just did exactly this with your mic)</span></> : <>Bhashini / Google Cloud Speech ASR in 12+ Indic languages <span className="text-leaf-mist/70">(demo uses your browser&rsquo;s mic + speech engine)</span></>}.</li>
                   <li><b>3 · Gemini reasons</b> — grounded on Kisan Call Centre Q&amp;A corpus + crop calendar + weather; guardrailed dosages.</li>
                   <li><b>4 · Text → speech</b> — advisory spoken back in the farmer&rsquo;s language on the same call.</li>
                   <li><b>5 · Logged to Kisan Alert</b> — every query feeds district-level outbreak detection. <Link href="/command" className="underline text-turmeric-soft">See command center →</Link></li>
@@ -650,7 +866,7 @@ export default function DemoClient() {
               )}
               {(callSource || smsSource) && mode !== "photo" && (
                 <div className="text-[11px] text-leaf-mist/70 mt-4 text-right">
-                  {(mode === "call" ? callSource : smsSource) === "gemini" ? "⚡ Live Gemini 2.5 Flash response" : "📁 Cached fallback response (offline-safe)"}
+                  {(mode === "call" ? callSource : smsSource) === "gemini" ? "⚡ Live Gemini 2.5 Flash response" : (mode === "call" ? callSource : smsSource) === "agmarknet" ? "⚡ Live Agmarknet mandi prices" : "📁 Cached fallback response (offline-safe)"}
                 </div>
               )}
             </div>

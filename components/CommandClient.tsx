@@ -1,158 +1,139 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { QUERY_FEED, OUTBREAKS, WEEKLY_TREND } from "@/lib/data";
+// KisanVaani Ops — professional command center for District Agriculture Officers.
+// White-theme, data-first console: overview KPIs + charts, weather alerts,
+// disease outbreaks, RSK/KVK escalation queue, broadcast log, farmer registry.
 
-const CHANNEL_ICON: Record<string, string> = { call: "📞", sms: "✉️", photo: "📷" };
+import { useCallback, useRef, useState } from "react";
+import { CircleCheck } from "lucide-react";
+import type { EscalationTicket } from "@/lib/types";
+import { BROADCAST_SEED, ESCALATIONS, type BroadcastRecord } from "@/lib/opsData";
+import Sidebar, { type OpsTab } from "./command/Sidebar";
+import TopBar from "./command/TopBar";
+import KpiCards from "./command/KpiCards";
+import { LanguageDonut, QueryVolumeChart, TopCropsChart } from "./command/Charts";
+import QueryFeedTable from "./command/QueryFeedTable";
+import AlertsPanel from "./command/AlertsPanel";
+import OutbreaksPanel from "./command/OutbreaksPanel";
+import EscalationsPanel from "./command/EscalationsPanel";
+import BroadcastsPanel from "./command/BroadcastsPanel";
+import RegistryTable from "./command/RegistryTable";
+import BroadcastComposer, { type ComposeTarget } from "./command/BroadcastComposer";
 
 export default function CommandClient() {
-  const [broadcast, setBroadcast] = useState<Record<number, "idle" | "sending" | "sent">>({});
+  const [tab, setTab] = useState<OpsTab>("overview");
+  const [district, setDistrict] = useState("All districts");
 
-  const sendAlert = (i: number) => {
-    setBroadcast((b) => ({ ...b, [i]: "sending" }));
-    setTimeout(() => setBroadcast((b) => ({ ...b, [i]: "sent" })), 1600);
-  };
+  // escalation tickets are mutable local state (assign / reply / close actions)
+  const [tickets, setTickets] = useState<EscalationTicket[]>(ESCALATIONS);
+  const updateTicket = useCallback((id: string, patch: Partial<EscalationTicket>) => {
+    setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+  }, []);
 
-  const maxQ = Math.max(...WEEKLY_TREND.map((d) => d.queries));
+  // broadcast log grows as the composer queues sends
+  const [broadcasts, setBroadcasts] = useState<BroadcastRecord[]>(BROADCAST_SEED);
+  const [composeTarget, setComposeTarget] = useState<ComposeTarget | null>(null);
+  const nextBrdId = useRef(1042);
+
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 4500);
+  }, []);
+
+  const queueBroadcast = useCallback(
+    ({ target, message, channels }: { target: ComposeTarget; message: string; channels: string[] }) => {
+      const id = `BRD-${nextBrdId.current++}`;
+      const rec: BroadcastRecord = {
+        id,
+        createdAt: new Date().toISOString(),
+        kind: target.kind,
+        title: target.title,
+        district: target.district,
+        state: target.state,
+        language: target.language,
+        channels,
+        recipients: target.recipients,
+        sent: 0,
+        delivered: 0,
+        heard: 0,
+        status: "queued",
+        message,
+      };
+      setBroadcasts((prev) => [rec, ...prev]);
+      showToast(`Broadcast queued · #${id}`);
+      // simulate the gateway completing the send
+      setTimeout(() => {
+        setBroadcasts((prev) =>
+          prev.map((b) =>
+            b.id === id
+              ? {
+                  ...b,
+                  status: "completed",
+                  sent: b.recipients,
+                  delivered: Math.round(b.recipients * 0.95),
+                  heard: channels.includes("Voice call") ? Math.round(b.recipients * 0.72) : 0,
+                }
+              : b
+          )
+        );
+      }, 6000);
+    },
+    [showToast]
+  );
+
+  const openEscalations = tickets.filter((t) => t.status === "pending" || t.status === "assigned").length;
 
   return (
-    <div className="min-h-screen bg-[#10241a] text-paper">
-      <nav className="border-b border-white/10 sticky top-0 z-20 bg-[#10241a]/90 backdrop-blur">
-        <div className="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between">
-          <Link href="/" className="font-display text-xl font-semibold">🌾 KisanVaani</Link>
-          <div className="flex items-center gap-4 text-sm">
-            <span className="text-turmeric-soft font-medium">Kisan Alert · Command Center</span>
-            <Link href="/demo" className="text-paper/70 hover:text-paper">Farmer Demo</Link>
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+      <Sidebar
+        tab={tab}
+        onTab={setTab}
+        badges={{ escalations: openEscalations, alerts: 4, outbreaks: 3 }}
+      />
+
+      <div className="pl-52">
+        <TopBar tab={tab} district={district} onDistrict={setDistrict} />
+
+        <main className="space-y-4 p-4 lg:p-6">
+          {tab === "overview" && (
+            <>
+              <KpiCards />
+              <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr_1fr]">
+                <QueryVolumeChart />
+                <LanguageDonut />
+                <TopCropsChart />
+              </div>
+              <QueryFeedTable district={district} />
+            </>
+          )}
+
+          {tab === "alerts" && <AlertsPanel district={district} onCompose={setComposeTarget} />}
+
+          {tab === "outbreaks" && <OutbreaksPanel district={district} onCompose={setComposeTarget} />}
+
+          {tab === "escalations" && (
+            <EscalationsPanel district={district} tickets={tickets} onUpdate={updateTicket} />
+          )}
+
+          {tab === "broadcasts" && <BroadcastsPanel district={district} broadcasts={broadcasts} />}
+
+          {tab === "registry" && <RegistryTable district={district} />}
+        </main>
+      </div>
+
+      <BroadcastComposer target={composeTarget} onClose={() => setComposeTarget(null)} onSend={queueBroadcast} />
+
+      {toast && (
+        <div className="rise fixed bottom-5 left-1/2 z-50 -translate-x-1/2" role="status" aria-live="polite">
+          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-lg">
+            <CircleCheck className="size-4 text-emerald-600" aria-hidden="true" />
+            {toast}
           </div>
         </div>
-      </nav>
-
-      <main className="mx-auto max-w-6xl px-4 py-8">
-        <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="font-display text-3xl font-semibold">Sehore District — Agriculture Command Center</h1>
-            <p className="text-paper/60 mt-1 text-sm">
-              The view for the MP&rsquo;s office, District Agriculture Officer &amp; KVK — every farmer query becomes early-warning data.
-            </p>
-          </div>
-          <div className="text-xs bg-white/10 rounded-full px-3 py-1.5">🔴 Live · Tue 8 Jul 2026, 14:20 IST</div>
-        </header>
-
-        {/* Stat cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          {[
-            { label: "Queries today", value: "178", sub: "↑ 38% vs last Tue" },
-            { label: "Farmers registered", value: "12,438", sub: "across 214 villages" },
-            { label: "Active outbreak alerts", value: "2", sub: "1 high · 1 medium" },
-            { label: "Advisories delivered", value: "41,209", sub: "since pilot start" },
-          ].map((s) => (
-            <div key={s.label} className="rounded-xl bg-white/5 border border-white/10 p-4">
-              <div className="text-2xl font-semibold font-display">{s.value}</div>
-              <div className="text-xs text-paper/60 mt-0.5">{s.label}</div>
-              <div className="text-[11px] text-leaf-mist/60 mt-1">{s.sub}</div>
-            </div>
-          ))}
-        </div>
-
-        <div className="grid lg:grid-cols-[1.2fr_1fr] gap-6 items-start">
-          {/* Left column: outbreaks + trend */}
-          <div className="space-y-6">
-            <section>
-              <h2 className="text-sm font-bold tracking-widest text-paper/50 mb-3">⚠️ OUTBREAK DETECTION (auto-clustered from queries)</h2>
-              <div className="space-y-4">
-                {OUTBREAKS.map((o, i) => (
-                  <div key={o.disease} className={`rounded-2xl border p-5 ${
-                    o.severity === "high" ? "bg-red-950/40 border-red-500/30" : "bg-amber-950/30 border-amber-500/30"
-                  }`}>
-                    <div className="flex items-start justify-between gap-3 flex-wrap">
-                      <div>
-                        <div className="font-display text-xl font-semibold">{o.disease}</div>
-                        <div className="text-sm text-paper/60">{o.block}</div>
-                      </div>
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                        o.severity === "high" ? "bg-red-500/20 text-red-300" : "bg-amber-500/20 text-amber-300"
-                      }`}>
-                        {o.severity.toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-4 mt-3 text-sm">
-                      <span><b>{o.reports}</b> reports this week</span>
-                      <span className="text-red-300">{o.delta}</span>
-                      <span><b>{o.farmersInRadius.toLocaleString()}</b> farmers in {o.radiusKm} km radius</span>
-                    </div>
-                    <div className="mt-3 rounded-lg bg-black/30 p-3 text-sm text-paper/80 font-mono leading-relaxed">
-                      {o.alertText}
-                    </div>
-                    <button
-                      onClick={() => sendAlert(i)}
-                      disabled={broadcast[i] === "sending" || broadcast[i] === "sent"}
-                      className={`mt-3 rounded-lg px-4 py-2 text-sm font-semibold transition ${
-                        broadcast[i] === "sent"
-                          ? "bg-leaf-bright/20 text-leaf-mist cursor-default"
-                          : "bg-turmeric text-white hover:bg-turmeric/90"
-                      }`}
-                    >
-                      {broadcast[i] === "sending" && "Broadcasting via voice + SMS…"}
-                      {broadcast[i] === "sent" && `✓ Alert sent to ${o.farmersInRadius.toLocaleString()} farmers (voice call + SMS)`}
-                      {!broadcast[i] && `📢 Broadcast alert to ${o.farmersInRadius.toLocaleString()} farmers`}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="rounded-2xl bg-white/5 border border-white/10 p-5">
-              <h2 className="text-sm font-bold tracking-widest text-paper/50 mb-4">QUERIES — LAST 7 DAYS</h2>
-              <div className="flex items-end gap-3 h-36">
-                {WEEKLY_TREND.map((d, i) => (
-                  <div key={d.day} className="flex-1 flex flex-col items-center gap-1.5">
-                    <div className="text-xs text-paper/70">{d.queries}</div>
-                    <div
-                      className={`w-full rounded-t-md grow-bar ${i === WEEKLY_TREND.length - 1 ? "bg-turmeric" : "bg-leaf-bright/70"}`}
-                      style={{ height: `${(d.queries / maxQ) * 100}%`, animationDelay: `${i * 60}ms` }}
-                    />
-                    <div className="text-[11px] text-paper/50">{d.day}</div>
-                  </div>
-                ))}
-              </div>
-              <div className="text-[11px] text-paper/40 mt-3">
-                Spike in cotton queries preceded the leaf-curl outbreak flag by 4 days — the early-warning window that matters.
-              </div>
-            </section>
-          </div>
-
-          {/* Right column: live feed */}
-          <section className="rounded-2xl bg-white/5 border border-white/10 p-5">
-            <h2 className="text-sm font-bold tracking-widest text-paper/50 mb-4">LIVE QUERY FEED</h2>
-            <div className="space-y-3">
-              {QUERY_FEED.map((q, i) => (
-                <div key={i} className="flex gap-3 items-start rounded-xl bg-black/20 p-3 rise" style={{ animationDelay: `${i * 50}ms` }}>
-                  <div className="text-lg">{CHANNEL_ICON[q.channel]}</div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex justify-between gap-2">
-                      <span className="text-sm font-semibold truncate">{q.name}</span>
-                      <span className="text-[11px] text-paper/40 shrink-0">{q.time}</span>
-                    </div>
-                    <div className="text-xs text-paper/60">{q.village}, {q.block} · {q.crop}</div>
-                    <div className="text-xs text-paper/80 mt-1">&ldquo;{q.issue}&rdquo;</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="text-[11px] text-paper/40 mt-4">
-              Anonymised &amp; geotagged by cell tower. Personally identifiable details visible only to authorised KVK officers.
-            </div>
-          </section>
-        </div>
-
-        <div className="mt-8 rounded-2xl bg-white/5 border border-white/10 p-5 text-sm text-paper/70">
-          <b className="text-paper">Why MPs &amp; districts want this:</b> today, disease outbreaks surface only when crop loss is
-          already visible — weeks late. Because every KisanVaani call, SMS and photo is a structured, geotagged signal, the
-          district sees outbreaks forming in <b>days, not weeks</b>, and can push voice alerts to exactly the affected villages.
-          That is the &ldquo;Alert&rdquo; in Kisan Alert.
-        </div>
-      </main>
+      )}
     </div>
   );
 }

@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI, Type } from "@google/genai";
-import { FALLBACK_DIAGNOSIS, type Lang } from "@/lib/data";
-
-const LANG_NAME: Record<Lang, string> = {
-  hi: "Hindi (Devanagari script)",
-  en: "simple Indian English",
-  mr: "Marathi (Devanagari script)",
-  te: "Telugu (Telugu script)",
-};
+import { FALLBACK_DIAGNOSIS } from "@/lib/data";
+import { LANG_NAME_FOR_PROMPT } from "@/lib/i18n-full";
 
 const SCHEMA = {
   type: Type.OBJECT,
@@ -39,7 +33,7 @@ export async function POST(req: NextRequest) {
   const { image, mimeType = "image/jpeg", lang = "hi" } = (await req.json()) as {
     image: string; // base64, no data: prefix
     mimeType: string;
-    lang: Lang;
+    lang: string;
   };
 
   const apiKey = process.env.GEMINI_API_KEY;
@@ -57,7 +51,7 @@ export async function POST(req: NextRequest) {
           parts: [
             { inlineData: { data: image, mimeType } },
             {
-              text: `Diagnose this crop photo sent by an Indian smallholder farmer. Identify the crop and the most likely disease/pest/deficiency. Give practical treatment suited to rural India (IPM/organic first, then chemical with exact dosages like "2 g/L"). Local-language fields must be in ${LANG_NAME[lang]}. If the image is not a plant, set is_plant=false and leave other fields as empty strings/arrays with confidence 0.`,
+              text: `Diagnose this crop photo sent by an Indian smallholder farmer. Identify the crop and the most likely disease/pest/deficiency. Give practical treatment suited to rural India (IPM/organic first, then chemical with exact dosages like "2 g/L"). Local-language fields must be in ${LANG_NAME_FOR_PROMPT[lang] || LANG_NAME_FOR_PROMPT.hi}. If the image is not a plant, set is_plant=false and leave other fields as empty strings/arrays with confidence 0.`,
             },
           ],
         },

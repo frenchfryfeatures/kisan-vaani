@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import CommandClient from "@/components/CommandClient";
 
 export const metadata: Metadata = {
-  title: "Kisan Alert Command Center — KisanVaani",
-  description: "District-level outbreak detection and alert broadcast, powered by aggregated farmer queries.",
+  title: "KisanVaani Ops — District Command Center",
+  description:
+    "Operations console for District Agriculture Officers: weather alerts, disease outbreak clusters, RSK/KVK escalation queue, farmer broadcasts and registry.",
 };
 
 export default function CommandPage() {
