@@ -48,7 +48,8 @@ export async function POST(req: NextRequest) {
     const text = result.text?.trim();
     if (!text) throw new Error("empty response");
     return NextResponse.json({ text, source: "gemini" });
-  } catch {
+  } catch (err) {
+    console.error("advisory gemini error:", err instanceof Error ? err.message : err);
     return NextResponse.json({ text: FALLBACK_ADVISORY[lang][channel], source: "fallback" });
   }
 }

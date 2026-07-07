@@ -73,7 +73,8 @@ export async function POST(req: NextRequest) {
     const parsed = JSON.parse(result.text || "{}");
     if (typeof parsed.is_plant !== "boolean") throw new Error("bad shape");
     return NextResponse.json({ ...parsed, source: "gemini" });
-  } catch {
+  } catch (err) {
+    console.error("diagnose gemini error:", err instanceof Error ? err.message : err);
     return NextResponse.json({ ...FALLBACK_DIAGNOSIS, is_plant: true, source: "fallback" });
   }
 }
