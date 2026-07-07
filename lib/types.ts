@@ -89,6 +89,26 @@ export type EscalationTicket = {
   slaHoursLeft: number;
 };
 
+export type MandiRow = {
+  market: string;
+  district: string;
+  state: string;
+  commodity: string;
+  variety: string;
+  minPrice: number; // Rs/quintal
+  maxPrice: number;
+  modalPrice: number;
+  arrivalDate: string; // DD-MM-YYYY as returned by Agmarknet
+};
+
+export type MandiResponse = {
+  rows: MandiRow[];
+  commodity: string;
+  requestedState: string | null;
+  generatedAt: string;
+  source: "agmarknet" | "cached";
+};
+
 export type VoiceResult = {
   detectedLangCode: string; // BCP-47-ish, e.g. "ta-IN"
   detectedLangName: string; // e.g. "Tamil (தமிழ்)"

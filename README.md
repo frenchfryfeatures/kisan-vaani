@@ -1,63 +1,63 @@
 # 🌾 KisanVaani — किसानवाणी
 
-**Voice & SMS crop advisory in Indic languages, with Gemini-powered disease diagnosis from photos — designed for low-connectivity, non-smartphone farmers.**
+**The complete AI farm-advisory platform for the farmers every app leaves behind** — voice & SMS in 12+ Indian languages with automatic spoken-language detection, Gemini disease diagnosis from photos, satellite + Soil Health Card crop recommendations, dry-spell/heavy-rain zone alerts, live mandi prices, and human expert escalation to RSKs/KVKs.
 
-Built for **Build with AI: Code for Communities** (Google Cloud × Hack2Skill) — **Track 4: Kisan Alert**, a problem statement submitted by a sitting Member of Parliament.
+Built by **Team Vishwakarma Devs** for **Build with AI: Code for Communities** (Google Cloud × Hack2Skill) — **Track 4: Kisan Alert**, a problem statement submitted by a sitting Member of Parliament.
 
 > आवाज़ ही असली ऐप है — *the voice is the real app.*
 
-## The gap we close
+## Why
 
-India has 146M+ farm holdings, 86% of them smallholders. Roughly **45% of rural users are on feature phones** — no apps, no data plans, often oral-first communication. Existing agri-advisory apps assume a smartphone the farmer doesn't have. Meanwhile 15–25% of yield is lost to pests and disease, and there is ~1 extension officer per 1,100 farmers.
+India has 146M+ farm holdings, 86% smallholders. ~45% of rural users carry feature phones — no apps, no data plans, oral-first. Existing agri-apps assume a smartphone the farmer doesn't have, while 15–25% of yield is lost to pests, disease, and mistimed irrigation. KisanVaani meets farmers on the phones they already own — and turns every interaction into district-level intelligence.
 
-KisanVaani meets farmers on the phones they already own:
+## The six modules
 
-| Channel | How it works | Farmer needs |
+| Module | What it does | Where |
 |---|---|---|
-| 📞 **Voice call (IVR)** | Farmer dials a toll-free number, speaks their problem in their language, hears the advisory on the same call | any phone, zero literacy |
-| ✉️ **SMS** | Shorthand like `KAPAS PILA PATTA` → native-script reply with exact dosages in ≤2 SMS segments | any handset, 2G |
-| 📷 **Photo → voice note** | Farmer (or the village relay worker / sahayak) sends a crop photo; Gemini diagnoses; farmer receives a spoken voice note in their language | one smartphone per village |
+| 📞 **Voice IVR + SMS advisory** | Farmer calls a toll-free number or texts shorthand (`KAPAS PILA PATTA`); Gemini answers in their language — spoken on the call, native-script by SMS. Press 2 for live mandi bhav. | `/demo` |
+| 🗣 **Any-language auto-detect** | Farmer speaks in *any* Indian language; Gemini identifies the language from the audio itself and replies in it. 12 languages have full UI + samples; detection is unbounded. | `/demo` (Auto mode) |
+| 🌱 **Smart crop recommendation** | Satellite soil grids (ISRIC SoilGrids 250m) + **live Government of India Soil Health Card data** + 16-day weather + ICAR agronomy → ranked, explained crop choices with mandi price context. | `/recommend` |
+| 🌧 **Dry-spell & heavy-rain zone alerts** | IMD-threshold detection (dry spell, heavy ≥64.5mm/day, very heavy ≥115.6) across the district registry; names the **exact blocks affected**; broadcasts voice+SMS only to farmers in the zone. | `/command` → Weather Alerts |
+| 💬 **WhatsApp photo & voice support** | Pixel-faithful WhatsApp flow: send a crop photo or voice note → AI diagnosis + voice-note reply. Website link reaches feature phones by SMS. | `/whatsapp` |
+| 🧑‍🌾 **RSK/KVK expert escalation** | Low-confidence or severe diagnoses become tickets for Rythu Seva Kendras (AP) / Krishi Vigyan Kendras (national) with 48h SLA — AI first, humans in the loop. | `/command` → Escalations |
 
-### The "Alert" layer — what makes this bigger than an answer-bot
+Plus the **Ops Command Center** (`/command`): a white-themed, government-grade console for the District Agriculture Officer and the MP's office — KPIs, weather-alert composer, outbreak radar, escalation queue, broadcast log, farmer registry.
 
-Every call, SMS and photo is a structured, geotagged signal. When reports of the same disease cluster in one block, KisanVaani flags an **outbreak days before it becomes visible crop loss** and lets the District Agriculture Officer broadcast a voice + SMS alert to every registered farmer in the affected radius. That district command center is the view built for the MP's office, DAO and KVK.
+## Real data, verified live (not mockups)
 
-## Live demo
+- 🇮🇳 **Soil Health Card** (soilhealth.dac.gov.in) — district N/P/K/OC/pH/micronutrient distributions, GraphQL, updated daily
+- 🇮🇳 **Agmarknet 2.0 open API** (api.agmarknet.gov.in) — same-day mandi modal prices, Directorate of Marketing & Inspection
+- 🛰 **ISRIC SoilGrids v2** — 250m satellite-derived soil properties + WRB classification → Indian soil types
+- 🛰 **NASA POWER** — agroclimate data for any Indian coordinate
+- 🌦 **Open-Meteo** — 16-day forecasts, ET₀, soil moisture (production: IMD Agromet Advisory Services)
+- 📚 **ICAR / SAU Package of Practices + FAO Table 14** — embedded, citation-backed agronomy table
+- 📞 **Kisan Call Centre corpus** (AIKosh/IndiaAI) — grounding roadmap
 
-- **Landing / pitch:** `/`
-- **Farmer simulator** (feature phone with IVR + SMS + photo diagnosis): `/demo`
-- **District command center** (outbreak detection + broadcast): `/command`
-
-The simulator reproduces the farmer experience in the browser: browser speech-synthesis stands in for the IVR line, and the SMS thread stands in for the gateway. **The AI is real** — advisory generation and photo diagnosis are live Gemini 2.5 Flash calls. Try uploading any crop/leaf photo.
+**A finding we're honest about:** no public real-time farm-level ground-sensor network exists in India today (WINDS is procurement-gated; IMD locked its AWS portal). So irrigation guidance uses satellite-derived soil moisture + ET₀ + forecast — and the production plan names ground sensors as a partnership goal, not a fake dependency.
 
 ## Architecture
 
 ```
-Farmer (feature phone)
-  │  voice call / SMS / photo-via-relay
+Farmer (any phone)
+  │ voice call / SMS / WhatsApp photo & voice note
   ▼
-IVR + SMS gateway (Exotel/Twilio; simulated in browser for the demo)
-  │  ASR: Bhashini / Google Cloud Speech (Indic)   [demo: Web Speech API]
+Channel layer — IVR + SMS gateway + WhatsApp Cloud API (simulated in demo; Exotel/Meta in production)
   ▼
-Gemini 2.5 Flash (Google AI)
-  ├─ advisory generation in hi/en/mr/te (channel-aware: spoken style vs ≤300-char SMS)
-  ├─ multimodal disease diagnosis with schema-enforced structured JSON output
-  └─ grounding roadmap: Kisan Call Centre Q&A corpus (AIKosh), crop calendars, IMD weather
+Gemini 2.5 Flash
+  ├─ language auto-detect + transcription from raw audio (verified: webm/opus inline)
+  ├─ multimodal disease diagnosis (schema-enforced JSON)
+  ├─ crop recommendation reasoning over live soil/weather/agronomy data
+  └─ channel-aware advisory generation (spoken IVR style vs ≤300-char SMS)
   ▼
-Reply: TTS voice on the same call / native-script SMS / voice note
+Data spine — every interaction logged, geotagged
+  ├─ outbreak clustering → disease early-warnings
+  ├─ weather scan → dry-spell / heavy-rain zone alerts (exact blocks)
+  └─ escalation tickets → RSK / KVK officers (48h SLA)
   ▼
-Kisan Alert command center — every query logged, geotagged (cell tower),
-clustered into outbreak early-warnings, broadcast to affected villages
+Ops Command Center — DAO / MP office console
 ```
 
-**Graceful degradation:** if the Gemini API is unreachable, every endpoint serves expert-written cached advisories — the farmer always gets an answer.
-
-## Stack
-
-- **Next.js 16** (App Router) + React 19 + Tailwind v4
-- **`@google/genai`** — Gemini 2.5 Flash: text advisory + multimodal vision with `responseSchema` structured output
-- Web Speech API (TTS + ASR) simulating the telephony voice channel
-- Production path: Vertex AI, Cloud Speech / Bhashini ASR-TTS, Exotel IVR + SMS shortcode
+**Graceful degradation everywhere:** every API route falls back to expert-written cached data if a live source hiccups. The farmer always gets an answer; the demo never breaks.
 
 ## Run locally
 
@@ -67,20 +67,16 @@ echo "GEMINI_API_KEY=your_key" > .env.local   # aistudio.google.com — free tie
 npm run dev -- -p 3100
 ```
 
-Without a key the app still runs fully on cached fallback advisories.
+## Pilot plan
 
-## Pilot plan (what we'd do with the MP's office)
+1. **Weeks 1–4:** toll-free + SMS shortcode in one block (~2,000 farmers); onboarding via gram panchayat & KVK; missed-call registration.
+2. **Months 2–4:** district scale; KVK/RSK officers review low-confidence diagnoses; weather-zone alerts live for the DAO.
+3. **Economics:** < ₹12 per farmer per season — cheaper than one wasted pesticide spray.
 
-1. **Weeks 1–4:** toll-free line + SMS shortcode live in one block (~2,000 farmers), onboarding via gram panchayat & KVK, registration by missed call.
-2. **Months 2–4:** district scale; KVK scientists review low-confidence diagnoses (every correction improves the corpus); outbreak alerts go live.
-3. **Unit economics:** < ₹12 per farmer per season (~6 advisories + 2 alerts) — cheaper than one wasted pesticide spray.
+## Repo notes
 
-## Data & grounding sources
-
-- [Kisan Call Centre transcripts (AIKosh / IndiaAI)](https://aikosh.indiaai.gov.in/home/datasets/details/kisan_call_centre_kcc_transcripts_of_farmers_queries_and_answers.html) — real farmer Q&A for grounding and evaluation
-- ICAR/KVK package-of-practices for dosage guardrails
-- IMD district forecasts for weather-aware advisories (roadmap)
+`research/*.json` contains the verified data-source research (endpoints, quirks, thresholds) this build is grounded on.
 
 ---
 
-*Built with ❤️ for the farmers of India.*
+*Built with ❤️ by Team Vishwakarma Devs, for the farmers of India.*

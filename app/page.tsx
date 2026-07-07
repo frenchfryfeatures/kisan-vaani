@@ -41,7 +41,9 @@ export default function Home() {
           <span className="font-display text-xl font-semibold text-forest">🌾 KisanVaani</span>
           <div className="flex items-center gap-4 text-sm">
             <Link href="/demo" className="text-ink-soft hover:text-forest">Demo</Link>
-            <Link href="/command" className="text-ink-soft hover:text-forest">Command Center</Link>
+            <Link href="/recommend" className="text-ink-soft hover:text-forest">Crop Advisor</Link>
+            <Link href="/whatsapp" className="text-ink-soft hover:text-forest">WhatsApp</Link>
+            <Link href="/command" className="text-ink-soft hover:text-forest">Ops Center</Link>
             <Link
               href="/demo"
               className="bg-forest text-paper rounded-full px-4 py-1.5 font-medium hover:bg-leaf transition"
@@ -120,6 +122,90 @@ export default function Home() {
               <p className="text-sm text-ink-soft mt-2 leading-relaxed">{c.body}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Platform modules */}
+      <section className="border-t border-forest/10">
+        <div className="mx-auto max-w-6xl px-4 py-16">
+          <h2 className="font-display text-3xl font-semibold text-forest">One platform, six connected modules</h2>
+          <p className="mt-3 text-ink-soft max-w-3xl">
+            Every module answers a piece of the MP&rsquo;s problem statement — and they share one data spine, so every
+            interaction makes the whole system smarter.
+          </p>
+          <div className="grid md:grid-cols-3 gap-5 mt-10">
+            {[
+              {
+                icon: "🌱",
+                title: "Smart crop recommendation",
+                body: "Satellite soil grids (ISRIC 250m), live Government of India Soil Health Card data, and 16-day weather — reasoned over ICAR agronomy by Gemini into ranked, explained crop choices.",
+                href: "/recommend",
+                cta: "Try the crop advisor →",
+              },
+              {
+                icon: "🌧",
+                title: "Dry-spell & heavy-rain zone alerts",
+                body: "IMD-threshold detection over every registered district names the exact blocks affected — and broadcasts voice + SMS guidance only to farmers inside the zone.",
+                href: "/command",
+                cta: "See live alerts →",
+              },
+              {
+                icon: "💬",
+                title: "WhatsApp photo & voice support",
+                body: "Farmers send a crop photo or a voice note in any language on WhatsApp; Gemini diagnoses and replies with a voice note. The website link travels by SMS to every feature phone.",
+                href: "/whatsapp",
+                cta: "Open WhatsApp demo →",
+              },
+              {
+                icon: "🧑‍🌾",
+                title: "Expert escalation (RSK / KVK)",
+                body: "Low-confidence or severe cases become tickets routed to Rythu Seva Kendras and Krishi Vigyan Kendras with a 48-hour SLA — AI first, humans in the loop.",
+                href: "/command",
+                cta: "View escalation queue →",
+              },
+              {
+                icon: "🏷",
+                title: "Live mandi prices",
+                body: "Real modal prices from the Agmarknet open API (Directorate of Marketing & Inspection) — on the same IVR call: press 2 for bhav.",
+                href: "/demo",
+                cta: "Press 2 on the demo →",
+              },
+              {
+                icon: "🗣",
+                title: "12+ languages, auto-detected",
+                body: "Speak in any Indian language — Gemini detects it from the audio itself and answers in the same language. No menus, no settings, no literacy assumed.",
+                href: "/demo",
+                cta: "Speak to it →",
+              },
+            ].map((m) => (
+              <Link key={m.title} href={m.href} className="rounded-2xl bg-white border border-forest/15 p-6 hover:shadow-lg hover:border-forest/40 transition block">
+                <div className="text-3xl">{m.icon}</div>
+                <h3 className="font-semibold text-lg mt-3 text-ink">{m.title}</h3>
+                <p className="text-sm text-ink-soft mt-2 leading-relaxed">{m.body}</p>
+                <div className="text-sm font-medium text-forest mt-3">{m.cta}</div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Data sources */}
+      <section className="bg-paper-warm border-y border-forest/10">
+        <div className="mx-auto max-w-6xl px-4 py-12">
+          <div className="text-xs font-bold tracking-widest text-ink-soft mb-4">REAL DATA, VERIFIED LIVE — NOT MOCKUPS</div>
+          <div className="flex flex-wrap gap-2 text-sm">
+            {[
+              "🇮🇳 Soil Health Card (Govt of India) — district N/P/K/pH, updated daily",
+              "🇮🇳 Agmarknet / DMI — live mandi modal prices",
+              "🛰 ISRIC SoilGrids — 250m satellite-derived soil properties",
+              "🛰 NASA POWER — agroclimate normals",
+              "🌦 Open-Meteo — 16-day forecasts + soil moisture (IMD Agromet in production)",
+              "📚 ICAR & SAU Package of Practices — agronomy grounding",
+              "📞 Kisan Call Centre corpus (AIKosh) — grounding roadmap",
+            ].map((s) => (
+              <span key={s} className="rounded-full bg-white border border-forest/15 px-3 py-1.5">{s}</span>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -230,10 +316,13 @@ export default function Home() {
           <div>
             <span className="font-display text-lg text-paper font-semibold">🌾 KisanVaani</span>
             <span className="ml-3">आवाज़ ही असली ऐप है — the voice is the real app.</span>
+            <div className="mt-1 text-xs text-paper/50">Built by <span className="text-turmeric-soft font-semibold">Team Vishwakarma Devs</span> · Build with AI: Code for Communities · Track 4 — Kisan Alert</div>
           </div>
           <div className="flex gap-4">
             <Link href="/demo" className="hover:text-paper">Demo</Link>
-            <Link href="/command" className="hover:text-paper">Command Center</Link>
+            <Link href="/recommend" className="hover:text-paper">Crop Advisor</Link>
+            <Link href="/whatsapp" className="hover:text-paper">WhatsApp</Link>
+            <Link href="/command" className="hover:text-paper">Ops Center</Link>
           </div>
         </div>
       </footer>
