@@ -2,7 +2,23 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Mic, Square, CheckCircle2, Languages } from "lucide-react";
+import {
+  Mic,
+  Square,
+  CheckCircle2,
+  Languages,
+  Phone,
+  PhoneOff,
+  MessageSquare,
+  Camera,
+  Leaf,
+  FlaskConical,
+  Clock,
+  Sprout,
+  ScanSearch,
+  ImagePlus,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { CASE_STUDIES } from "@/lib/data";
 import { DISTRICTS } from "@/lib/districts";
 import { LANGS_FULL, T_FULL, SAMPLE_QUERIES_FULL } from "@/lib/i18n-full";
@@ -32,10 +48,10 @@ type Diagnosis = {
   source?: string;
 };
 
-const MODES: { id: Mode; icon: string; label: string; sub: string }[] = [
-  { id: "call", icon: "📞", label: "Voice Call (IVR)", sub: "Zero literacy needed" },
-  { id: "sms", icon: "✉️", label: "SMS", sub: "Works on 2G" },
-  { id: "photo", icon: "📷", label: "Photo Diagnosis", sub: "Via relay worker" },
+const MODES: { id: Mode; icon: LucideIcon; label: string; sub: string }[] = [
+  { id: "call", icon: Phone, label: "Voice call (IVR)", sub: "No reading required" },
+  { id: "sms", icon: MessageSquare, label: "SMS", sub: "Any 2G handset" },
+  { id: "photo", icon: Camera, label: "Photo diagnosis", sub: "Via relay worker" },
 ];
 
 // Keypad-2 mandi flow: crops + state from the pilot's first district (Sehore, MP).
@@ -347,7 +363,10 @@ export default function DemoClient() {
       {/* Nav */}
       <nav className="border-b border-forest/10 bg-paper/90 backdrop-blur sticky top-0 z-20">
         <div className="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between">
-          <Link href="/" className="font-display text-xl font-semibold text-forest">🌾 KisanVaani</Link>
+          <Link href="/" className="font-display text-xl font-semibold text-forest inline-flex items-center gap-1.5">
+            <Sprout className="text-leaf" size={18} aria-hidden />
+            KisanVaani
+          </Link>
           <div className="flex items-center gap-4 text-sm">
             <Link href="/command" className="text-ink-soft hover:text-forest">Command Center</Link>
             <Link href="/" className="text-ink-soft hover:text-forest">About</Link>
@@ -357,16 +376,16 @@ export default function DemoClient() {
 
       <main className="mx-auto max-w-6xl px-4 py-8">
         <header className="mb-6">
-          <h1 className="font-display text-3xl font-semibold text-forest">Live Demo — the farmer&rsquo;s side</h1>
+          <h1 className="font-display text-3xl font-semibold text-forest">Farmer demo</h1>
           <p className="text-ink-soft mt-1 max-w-2xl">
-            This simulator reproduces the exact experience on a <strong>₹1,500 feature phone</strong>. In production the
-            same flows run over a real IVR line &amp; SMS gateway — no app, no internet needed on the farmer&rsquo;s side.
+            This simulator reproduces the experience on a <strong>₹1,500 feature phone</strong>. In production the same
+            flows run over an IVR line and SMS gateway; the farmer needs no app and no internet connection.
           </p>
         </header>
 
         {/* Language picker — 12 scheduled languages + auto-detect */}
         <div className="mb-6 max-w-3xl">
-          <div className="text-sm text-ink-soft mb-2">Farmer&rsquo;s language:</div>
+          <div className="text-sm text-ink-soft mb-2">Farmer&rsquo;s language</div>
           <div className="flex flex-wrap items-center gap-1.5">
             {LANGS_FULL.map((l) => (
               <button
@@ -389,13 +408,14 @@ export default function DemoClient() {
                   : "bg-turmeric-soft/40 text-ink border-turmeric/40 hover:border-turmeric"
               }`}
             >
-              🎙 Auto (any language)
+              <Mic className="inline w-3 h-3 -mt-0.5 mr-1" aria-hidden />
+              Auto — any language
             </button>
           </div>
           {lang === "auto" && (
             <div className="text-xs text-ink-soft mt-2 rise">
               <Languages className="inline w-3.5 h-3.5 -mt-0.5 mr-1 text-turmeric" aria-hidden />
-              Speak in <b>any Indian language</b> — Gemini detects it automatically and replies in the same language.
+              Speak in any Indian language; Gemini detects it and replies in the same language.
             </div>
           )}
         </div>
@@ -410,8 +430,8 @@ export default function DemoClient() {
                 mode === m.id ? "bg-forest text-paper border-forest shadow-lg" : "bg-white border-forest/15 hover:border-forest/40"
               }`}
             >
-              <div className="text-xl">{m.icon}</div>
-              <div className="font-semibold text-sm mt-1">{m.label}</div>
+              <m.icon size={18} className={mode === m.id ? "text-paper/80" : "text-ink-soft"} aria-hidden />
+              <div className="font-semibold text-sm mt-1.5">{m.label}</div>
               <div className={`text-xs ${mode === m.id ? "text-paper/70" : "text-ink-soft"}`}>{m.sub}</div>
             </button>
           ))}
@@ -507,16 +527,16 @@ export default function DemoClient() {
                     }`}
                     aria-label="Start call"
                   >
-                    📞
+                    <Phone size={20} aria-hidden />
                   </button>
-                  <div className="text-zinc-500 text-[9px] text-center leading-tight">IVR DEMO<br />browser voice = phone line</div>
+                  <div className="text-zinc-500 text-[9px] text-center leading-tight">IVR simulation<br />browser voice stands in for the line</div>
                   <button
                     onClick={endCall}
                     disabled={mode !== "call" || callState === "idle"}
                     className="w-12 h-12 rounded-full bg-red-600 text-white text-xl flex items-center justify-center keypad-btn disabled:opacity-40"
                     aria-label="End call"
                   >
-                    ⛔
+                    <PhoneOff size={20} aria-hidden />
                   </button>
                 </div>
 
@@ -542,10 +562,12 @@ export default function DemoClient() {
             ) : (
               /* Photo mode panel */
               <div className="rounded-2xl bg-white border border-forest/15 p-5 shadow-sm">
-                <h3 className="font-semibold text-forest mb-1">📷 Send a crop photo</h3>
+                <h3 className="font-semibold text-forest mb-1 flex items-center gap-1.5">
+                  <Camera size={16} className="text-ink-soft" aria-hidden /> Send a crop photo
+                </h3>
                 <p className="text-xs text-ink-soft mb-4">
-                  In the field: farmer hands their phone photo to the village <b>relay worker / sahayak</b>, or sends via
-                  WhatsApp to <b>+91-98XXX-KISAN</b>. The reply comes back as a <b>voice note in their language</b>.
+                  In the field, the farmer hands the photo to the village <b>relay worker (sahayak)</b> or sends it on
+                  WhatsApp to +91-98XXX-KISAN. The reply arrives as a voice note in their language.
                 </p>
                 <button
                   onClick={() => fileRef.current?.click()}
@@ -556,9 +578,9 @@ export default function DemoClient() {
                     <img src={photoPreview} alt="uploaded crop" className="max-h-40 mx-auto rounded-lg" />
                   ) : (
                     <>
-                      <div className="text-3xl">🍃</div>
-                      <div className="text-sm font-medium text-leaf mt-1">Upload a leaf/crop photo</div>
-                      <div className="text-xs text-ink-soft">live Gemini vision diagnosis</div>
+                      <ImagePlus size={24} className="mx-auto text-leaf" aria-hidden />
+                      <div className="text-sm font-medium text-leaf mt-1.5">Upload a leaf or crop photo</div>
+                      <div className="text-xs text-ink-soft">Analysed live with Gemini vision</div>
                     </>
                   )}
                 </button>
@@ -569,7 +591,7 @@ export default function DemoClient() {
                   className="hidden"
                   onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
                 />
-                <div className="text-xs text-ink-soft text-center my-3">— or replay a real field case —</div>
+                <div className="text-xs text-ink-soft text-center my-3">Or replay a documented field case</div>
                 <div className="space-y-2">
                   {CASE_STUDIES.map((c) => (
                     <button
@@ -579,7 +601,9 @@ export default function DemoClient() {
                         activeCase === c.id ? "border-forest bg-leaf-mist/50" : "border-forest/15 hover:border-forest/40"
                       }`}
                     >
-                      <div className="text-2xl">{c.emoji}</div>
+                      <div className="w-9 h-9 shrink-0 rounded-lg bg-leaf-mist text-forest flex items-center justify-center text-sm font-semibold" aria-hidden>
+                        {c.crop.charAt(0)}
+                      </div>
                       <div className="min-w-0">
                         <div className="text-sm font-semibold truncate">{c.crop} — {c.farmer}</div>
                         <div className="text-xs text-ink-soft truncate">{c.village} · {c.photoNote}</div>
@@ -593,7 +617,9 @@ export default function DemoClient() {
             {/* Under-phone inputs for call & sms */}
             {mode === "call" && callState === "listening" && lang === "auto" && (
               <div className="mt-4 rounded-xl bg-white border border-forest/15 p-4 rise">
-                <div className="text-xs font-semibold text-ink-soft mb-3">🌐 {t.recordHint}</div>
+                <div className="text-xs font-semibold text-ink-soft mb-3 flex items-center gap-1.5">
+                  <Languages size={14} className="text-turmeric shrink-0" aria-hidden /> {t.recordHint}
+                </div>
                 <button
                   onClick={toggleRecord}
                   className={`w-full flex items-center justify-center gap-2 rounded-xl py-4 font-semibold text-base transition ${
@@ -611,7 +637,7 @@ export default function DemoClient() {
                   )}
                 </button>
                 <div className="text-[11px] text-ink-soft text-center mt-2">
-                  Hindi, Tamil, Bhojpuri, Santali — any Indian language works. Gemini auto-detects it.
+                  Hindi, Tamil, Bhojpuri, Santali — any Indian language works; Gemini detects it automatically.
                 </div>
                 {micDenied && (
                   <div className="text-xs text-clay text-center mt-2">
@@ -623,8 +649,9 @@ export default function DemoClient() {
 
             {mode === "call" && callState === "listening" && lang !== "auto" && (
               <div className="mt-4 rounded-xl bg-white border border-forest/15 p-4 rise">
-                <div className="text-xs font-semibold text-ink-soft mb-2">
-                  🎙 Farmer speaks {micSupported && "(use your mic, or tap a sample)"}:
+                <div className="text-xs font-semibold text-ink-soft mb-2 flex items-center gap-1.5">
+                  <Mic size={14} className="shrink-0" aria-hidden />
+                  Farmer speaks {micSupported && "(use your mic, or tap a sample)"}
                 </div>
                 <div className="flex flex-wrap gap-2 mb-3">
                   {samples.ivr.map((q) => (
@@ -643,7 +670,11 @@ export default function DemoClient() {
                       onClick={toggleMic}
                       className={`px-3 py-2 rounded-lg text-sm font-medium ${micOn ? "bg-red-600 text-white blink" : "bg-forest text-paper"}`}
                     >
-                      {micOn ? "● Rec" : "🎙 Mic"}
+                      {micOn ? (
+                        <span className="inline-flex items-center gap-1"><Square size={14} aria-hidden /> Stop</span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1"><Mic size={14} aria-hidden /> Mic</span>
+                      )}
                     </button>
                   )}
                   <input
@@ -654,7 +685,7 @@ export default function DemoClient() {
                     className="flex-1 border border-forest/20 rounded-lg px-3 py-2 text-sm bg-paper focus:outline-none focus:border-forest"
                   />
                   <button onClick={() => submitProblem(callInput)} className="px-3 py-2 rounded-lg bg-turmeric text-white text-sm font-medium">
-                    ➤
+                    Send
                   </button>
                 </div>
               </div>
@@ -662,7 +693,7 @@ export default function DemoClient() {
 
             {mode === "call" && callState === "mandi" && (
               <div className="mt-4 rounded-xl bg-white border border-forest/15 p-4 rise">
-                <div className="text-xs font-semibold text-ink-soft mb-2">📈 {t.mandiPrices} — {MANDI_STATE}:</div>
+                <div className="text-xs font-semibold text-ink-soft mb-2">{t.mandiPrices} — {MANDI_STATE}</div>
                 <div className="flex flex-wrap gap-2">
                   {MANDI_CROPS.map((c) => (
                     <button
@@ -674,7 +705,7 @@ export default function DemoClient() {
                     </button>
                   ))}
                 </div>
-                <div className="text-[11px] text-ink-soft mt-2">Live Agmarknet prices — cached quote if the feed is down.</div>
+                <div className="text-[11px] text-ink-soft mt-2">Prices: Agmarknet; a cached quote is used if the feed is unavailable.</div>
               </div>
             )}
 
@@ -728,22 +759,21 @@ export default function DemoClient() {
               <div className="rounded-2xl bg-white border border-forest/15 p-6 shadow-sm min-h-64">
                 {!diag && !diagLoading && (
                   <div className="h-full flex flex-col items-center justify-center text-center text-ink-soft py-14">
-                    <div className="text-4xl mb-3">🔬</div>
+                    <ScanSearch size={32} className="mb-3 text-ink-soft/60" aria-hidden />
                     <div className="font-medium">Diagnosis appears here</div>
                     <div className="text-xs mt-1">Upload a photo or replay a field case</div>
                   </div>
                 )}
                 {diagLoading && (
                   <div className="py-14 text-center">
-                    <div className="text-4xl blink">🧠</div>
+                    <ScanSearch size={32} className="mx-auto text-forest blink" aria-hidden />
                     <div className="mt-3 font-medium text-forest">Gemini is examining the photo…</div>
-                    <div className="text-xs text-ink-soft mt-1">crop → disease → treatment → voice note</div>
+                    <div className="text-xs text-ink-soft mt-1">Crop, disease, treatment, then a voice note</div>
                   </div>
                 )}
                 {diag && !diagLoading && diag.is_plant === false && (
                   <div className="py-14 text-center text-ink-soft">
-                    <div className="text-3xl">🤔</div>
-                    <div className="mt-2">That doesn&rsquo;t look like a plant — try a crop or leaf photo.</div>
+                    <div className="mt-2">This does not appear to be a plant. Try a crop or leaf photo.</div>
                   </div>
                 )}
                 {diag && !diagLoading && diag.is_plant !== false && (
@@ -758,7 +788,7 @@ export default function DemoClient() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${sevColor[diag.severity]}`}>
-                          {diag.severity.toUpperCase()}
+                          Severity: {diag.severity}
                         </span>
                         <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-leaf-mist text-forest">
                           {diag.confidence}% match
@@ -777,18 +807,22 @@ export default function DemoClient() {
                       {speaking ? t.stop : `${t.listen} — voice note (${langMeta.native})`}
                     </button>
                     <div className="text-[11px] text-ink-soft text-center mt-1">
-                      ↑ this is what the farmer receives on their phone — no reading required
+                      This is the voice note the farmer receives on their phone; no reading required.
                     </div>
 
                     <div className="grid sm:grid-cols-2 gap-4 mt-5">
                       <div className="rounded-xl bg-leaf-mist/50 p-4">
-                        <div className="text-xs font-bold text-forest mb-2">🌿 ORGANIC / IPM FIRST</div>
+                        <div className="text-xs font-semibold text-forest mb-2 flex items-center gap-1.5">
+                          <Leaf size={14} aria-hidden /> Organic / IPM first
+                        </div>
                         <ul className="text-sm space-y-1.5">
                           {diag.treatment_organic.map((x, i) => <li key={i}>• {x}</li>)}
                         </ul>
                       </div>
                       <div className="rounded-xl bg-amber-50 p-4">
-                        <div className="text-xs font-bold text-clay mb-2">🧪 IF SEVERE (CHEMICAL)</div>
+                        <div className="text-xs font-semibold text-clay mb-2 flex items-center gap-1.5">
+                          <FlaskConical size={14} aria-hidden /> Chemical control (if severe)
+                        </div>
                         <ul className="text-sm space-y-1.5">
                           {diag.treatment_chemical.map((x, i) => <li key={i}>• {x}</li>)}
                         </ul>
@@ -796,18 +830,18 @@ export default function DemoClient() {
                     </div>
 
                     <div className="mt-4 rounded-xl border border-forest/10 p-4">
-                      <div className="text-xs font-bold text-ink-soft mb-2">SYMPTOMS MATCHED</div>
+                      <div className="text-xs font-semibold text-ink-soft mb-2">Symptoms matched</div>
                       <div className="flex flex-wrap gap-1.5">
                         {diag.symptoms.map((s, i) => (
                           <span key={i} className="text-xs bg-paper-warm rounded-full px-2.5 py-1">{s}</span>
                         ))}
                       </div>
-                      <div className="text-xs font-bold text-ink-soft mt-3 mb-1">PREVENT NEXT SEASON</div>
+                      <div className="text-xs font-semibold text-ink-soft mt-3 mb-1">Prevention for next season</div>
                       <ul className="text-sm space-y-1">{diag.prevention.map((x, i) => <li key={i}>• {x}</li>)}</ul>
                     </div>
 
                     <div className="mt-4 flex items-start gap-2 rounded-xl bg-red-50 border border-red-100 p-3 text-sm text-clay">
-                      <span>⏰</span>
+                      <Clock size={16} className="mt-0.5 shrink-0" aria-hidden />
                       <span><b>Urgency:</b> {diag.urgency}</span>
                     </div>
 
@@ -817,19 +851,19 @@ export default function DemoClient() {
                         onClick={() => setKvkTicket(`RSK-${1000 + Math.floor(Math.random() * 9000)}`)}
                         className="mt-4 w-full rounded-xl border-2 border-forest/30 text-forest py-3 text-sm font-semibold hover:bg-leaf-mist/40 transition"
                       >
-                        👨‍🌾 Send to KVK / Rythu Seva Kendra expert
+                        Refer to a KVK / Rythu Seva Kendra expert
                       </button>
                     ) : (
                       <div className="mt-4 flex items-start gap-2 rounded-xl bg-leaf-mist/60 border border-leaf/40 p-3 text-sm text-forest rise">
                         <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" aria-hidden />
                         <span>
-                          <b>Ticket {kvkTicket} created</b> · KVK Sehore · reply within 48h SLA
+                          <b>Ticket {kvkTicket} created</b> · KVK Sehore · response within 48 hours
                         </span>
                       </div>
                     )}
 
                     <div className="text-[11px] text-ink-soft mt-3 text-right">
-                      {diag.source === "gemini" ? "⚡ Live Gemini 2.5 Flash diagnosis" : diag.source === "case-study" ? "📁 Field case study (cached)" : "📁 Cached fallback"}
+                      {diag.source === "gemini" ? "Source: live Gemini 2.5 Flash diagnosis" : diag.source === "case-study" ? "Source: field case study (cached)" : "Source: cached fallback"}
                     </div>
                   </div>
                 )}
@@ -838,44 +872,44 @@ export default function DemoClient() {
 
             {/* Pipeline explainer */}
             <div className="rounded-2xl bg-forest text-paper p-6">
-              <div className="text-xs font-bold tracking-widest text-leaf-mist/80 mb-3">WHAT JUST HAPPENED — PRODUCTION PIPELINE</div>
+              <div className="text-xs font-semibold tracking-widest text-leaf-mist/80 mb-3 uppercase">How this works in production</div>
               {mode === "call" && (
                 <ol className="space-y-2.5 text-sm">
-                  <li><b>1 · Missed-call / toll-free IVR</b> — farmer dials 1800-180-KISAN; Exotel/Twilio Voice picks up. Zero cost to farmer.</li>
-                  <li><b>2 · Speech → text</b> — {lang === "auto" ? <>Gemini ingests the raw audio, auto-detects the language and transcribes it — no language menu needed <span className="text-leaf-mist/70">(the demo just did exactly this with your mic)</span></> : <>Bhashini / Google Cloud Speech ASR in 12+ Indic languages <span className="text-leaf-mist/70">(demo uses your browser&rsquo;s mic + speech engine)</span></>}.</li>
-                  <li><b>3 · Gemini reasons</b> — grounded on Kisan Call Centre Q&amp;A corpus + crop calendar + weather; guardrailed dosages.</li>
-                  <li><b>4 · Text → speech</b> — advisory spoken back in the farmer&rsquo;s language on the same call.</li>
-                  <li><b>5 · Logged to Kisan Alert</b> — every query feeds district-level outbreak detection. <Link href="/command" className="underline text-turmeric-soft">See command center →</Link></li>
+                  <li><b>1 · Toll-free IVR</b> — the farmer dials 1800-180-KISAN; Exotel/Twilio Voice answers. No cost to the farmer.</li>
+                  <li><b>2 · Speech to text</b> — {lang === "auto" ? <>Gemini ingests the raw audio, detects the language and transcribes it; no language menu is needed <span className="text-leaf-mist/70">(the demo just did this with your microphone)</span></> : <>Bhashini / Google Cloud Speech ASR in 12+ Indic languages <span className="text-leaf-mist/70">(the demo uses your browser&rsquo;s microphone and speech engine)</span></>}.</li>
+                  <li><b>3 · Gemini reasons</b> — grounded on the Kisan Call Centre Q&amp;A corpus, crop calendar and weather, with guardrailed dosages.</li>
+                  <li><b>4 · Text to speech</b> — the advisory is spoken back in the farmer&rsquo;s language on the same call.</li>
+                  <li><b>5 · Logged to Kisan Alert</b> — every query feeds district-level outbreak detection. <Link href="/command" className="underline text-turmeric-soft">View the command center</Link></li>
                 </ol>
               )}
               {mode === "sms" && (
                 <ol className="space-y-2.5 text-sm">
-                  <li><b>1 · SMS to shortcode 56070</b> — works on 2G, any handset, ₹0.15. Shorthand like <span className="font-mono">KAPAS PILA PATTA</span> is fine.</li>
-                  <li><b>2 · Gemini expands &amp; reasons</b> — understands transliterated Hindi/Marathi/Telugu shorthand, returns advisory in native script.</li>
-                  <li><b>3 · Reply in ≤2 SMS segments</b> — exact dosages + Kisan Call Centre number, readable on a black-and-white screen.</li>
-                  <li><b>4 · Logged to Kisan Alert</b> — anonymised, geotagged by cell tower for outbreak mapping. <Link href="/command" className="underline text-turmeric-soft">See command center →</Link></li>
+                  <li><b>1 · SMS to shortcode 56070</b> — works on 2G on any handset at ₹0.15 per message. Shorthand such as <span className="font-mono">KAPAS PILA PATTA</span> is understood.</li>
+                  <li><b>2 · Gemini expands and reasons</b> — reads transliterated Hindi/Marathi/Telugu shorthand and returns the advisory in native script.</li>
+                  <li><b>3 · Reply within two SMS segments</b> — exact dosages plus the Kisan Call Centre number, readable on a monochrome screen.</li>
+                  <li><b>4 · Logged to Kisan Alert</b> — anonymised and geotagged by cell tower for outbreak mapping. <Link href="/command" className="underline text-turmeric-soft">View the command center</Link></li>
                 </ol>
               )}
               {mode === "photo" && (
                 <ol className="space-y-2.5 text-sm">
-                  <li><b>1 · Photo via relay</b> — farmer&rsquo;s own phone, the village sahayak&rsquo;s smartphone, or WhatsApp. One smartphone serves a whole village.</li>
-                  <li><b>2 · Gemini 2.5 Flash vision</b> — identifies crop + disease with structured JSON output (schema-enforced, no parsing errors).</li>
-                  <li><b>3 · Voice note back</b> — 60-word spoken summary in the farmer&rsquo;s language; full advisory SMS to their feature phone.</li>
-                  <li><b>4 · Every diagnosis is a data point</b> — 23 leaf-curl photos from one block = an outbreak alert to 1,240 farmers. <Link href="/command" className="underline text-turmeric-soft">See command center →</Link></li>
+                  <li><b>1 · Photo via relay</b> — the farmer&rsquo;s own phone, the village sahayak&rsquo;s smartphone, or WhatsApp. One smartphone can serve a village.</li>
+                  <li><b>2 · Gemini 2.5 Flash vision</b> — identifies the crop and disease with schema-enforced structured JSON output.</li>
+                  <li><b>3 · Voice note back</b> — a 60-word spoken summary in the farmer&rsquo;s language, with the full advisory sent by SMS to their feature phone.</li>
+                  <li><b>4 · Every diagnosis is a data point</b> — 23 leaf-curl photos from one block become an outbreak alert to 1,240 farmers. <Link href="/command" className="underline text-turmeric-soft">View the command center</Link></li>
                 </ol>
               )}
               {(callSource || smsSource) && mode !== "photo" && (
                 <div className="text-[11px] text-leaf-mist/70 mt-4 text-right">
-                  {(mode === "call" ? callSource : smsSource) === "gemini" ? "⚡ Live Gemini 2.5 Flash response" : (mode === "call" ? callSource : smsSource) === "agmarknet" ? "⚡ Live Agmarknet mandi prices" : "📁 Cached fallback response (offline-safe)"}
+                  {(mode === "call" ? callSource : smsSource) === "gemini" ? "Source: live Gemini 2.5 Flash response" : (mode === "call" ? callSource : smsSource) === "agmarknet" ? "Source: live Agmarknet mandi prices" : "Source: cached fallback response (offline-safe)"}
                 </div>
               )}
             </div>
 
             {/* Why this matters */}
             <div className="rounded-2xl bg-white border border-forest/15 p-5 text-sm text-ink-soft">
-              <b className="text-ink">Why voice &amp; SMS first?</b> ~55% of rural India is not on smartphones, and many who are
-              stay off apps due to literacy &amp; data costs. Existing agri-apps skip exactly the farmers who lose the most to
-              crop disease. KisanVaani meets farmers on the phones they already own.
+              <b className="text-ink">Why voice and SMS first?</b> Roughly 55% of rural India does not use a smartphone,
+              and many who do avoid apps because of literacy and data costs. Existing agri apps miss the farmers most
+              exposed to crop disease. KisanVaani works on the phones farmers already own.
             </div>
           </div>
         </div>

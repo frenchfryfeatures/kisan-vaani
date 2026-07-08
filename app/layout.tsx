@@ -6,9 +6,9 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-fraunces" });
 
 export const metadata: Metadata = {
-  title: "KisanVaani — Voice & SMS Crop Advisory for Every Farmer",
+  title: "KisanVaani — Voice and SMS crop advisory for every farmer",
   description:
-    "AI crop advisory in Indic languages over voice calls & SMS, with Gemini-powered disease diagnosis from photos. Built for low-connectivity, non-smartphone farmers. Track 4 (Kisan Alert), Build with AI: Code for Communities.",
+    "AI crop advisory in Indic languages over voice calls and SMS, with Gemini disease diagnosis from farmer photos. Designed for low-connectivity, non-smartphone farmers. Track 4 (Kisan Alert), Build with AI: Code for Communities.",
 };
 
 export default function RootLayout({

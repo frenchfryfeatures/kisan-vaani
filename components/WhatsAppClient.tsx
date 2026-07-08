@@ -17,6 +17,7 @@ import {
   Play,
   Send,
   Smile,
+  Sprout,
   Square,
   Video,
 } from "lucide-react";
@@ -185,6 +186,9 @@ export default function WhatsAppClient() {
   const [recSeconds, setRecSeconds] = useState(0);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [playProgress, setPlayProgress] = useState(0);
+  // Set after mount only — calling fmtTime() during render caused a server/client
+  // hydration mismatch (React #418), since the two renders format different Dates.
+  const [smsTime, setSmsTime] = useState("");
 
   const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -209,6 +213,7 @@ export default function WhatsAppClient() {
     }
     setMsgs(initial);
     setLoaded(true);
+    setSmsTime(fmtTime());
   }, []);
 
   useEffect(() => {
@@ -489,7 +494,7 @@ export default function WhatsAppClient() {
   // ---------- quick replies ----------
   const quickReply = useCallback(
     (label: string) => {
-      if (label.includes("Photo")) {
+      if (label.toLowerCase().includes("photo")) {
         fileRef.current?.click();
         return;
       }
@@ -636,15 +641,16 @@ export default function WhatsAppClient() {
       {/* Site nav (outside the phone) */}
       <nav className="border-b border-forest/10 bg-paper/90 backdrop-blur sticky top-0 z-20">
         <div className="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between">
-          <Link href="/" className="font-display text-xl font-semibold text-forest">
-            🌾 KisanVaani
+          <Link href="/" className="font-display text-xl font-semibold text-forest inline-flex items-center gap-2">
+            <Sprout className="w-[18px] h-[18px] text-forest/70" aria-hidden />
+            KisanVaani
           </Link>
           <div className="flex items-center gap-4 text-sm">
             <Link href="/demo" className="text-ink-soft hover:text-forest">
-              Live Demo
+              Live demo
             </Link>
             <Link href="/command" className="text-ink-soft hover:text-forest">
-              Command Center
+              Command centre
             </Link>
           </div>
         </div>
@@ -652,11 +658,11 @@ export default function WhatsAppClient() {
 
       <main className="mx-auto max-w-6xl px-4 py-8">
         <header className="mb-6">
-          <h1 className="font-display text-3xl font-semibold text-forest">WhatsApp — the smartphone channel</h1>
+          <h1 className="font-display text-3xl font-semibold text-forest">WhatsApp channel</h1>
           <p className="text-ink-soft mt-1 max-w-2xl">
-            One smartphone serves a whole village. Send a <strong>crop photo</strong> or a{" "}
-            <strong>voice note in any Indian language</strong> — the diagnosis comes back as a voice note. This is a
-            pixel-faithful simulator of the production WhatsApp Business flow.
+            Send a crop photo or a <strong>voice note in any Indian language</strong>; the diagnosis returns as a voice
+            note. This page simulates the production WhatsApp Business flow. One smartphone can serve several
+            households in a village.
           </p>
         </header>
 
@@ -779,7 +785,7 @@ export default function WhatsAppClient() {
                 {/* quick replies — Cloud API caps interactive buttons at 3 */}
                 {!typing && (
                   <div className="pt-1.5 pb-1 space-y-1.5 max-w-[85%]">
-                    {["🍅 Photo bhejein", "🎙 Awaaz se poochein", "☎️ Call 1800-180-KISAN"].map((label) => (
+                    {["Fasal ki photo bhejein", "Awaaz se poochhein", "Call 1800-180-1551"].map((label) => (
                       <button
                         key={label}
                         onClick={() => quickReply(label)}
@@ -852,8 +858,9 @@ export default function WhatsAppClient() {
               }}
             />
             <p className="text-[11px] text-ink-soft text-center mt-3 px-4">
-              Simulator is API-faithful: 3-button cap, voice notes &amp; media match the Meta Cloud API contract. Browser
-              TTS stands in for production voice notes.
+              The simulator follows the Meta Cloud API contract: quick replies are capped at three buttons, and media
+              and voice notes match the production formats. Browser text-to-speech stands in for production voice
+              notes.
             </p>
           </div>
 
@@ -863,13 +870,11 @@ export default function WhatsAppClient() {
 
             {/* 1 · SMS invite */}
             <div className="rounded-2xl bg-white border border-forest/15 p-5">
-              <div className="text-xs font-bold tracking-widest text-ink-soft mb-3">
-                1 · SMS INVITE — REACHES EVERY FEATURE PHONE
-              </div>
+              <div className="text-xs font-semibold text-ink-soft mb-3">1. SMS invite — reaches feature phones</div>
               <div className="rounded-xl bg-zinc-100 border border-zinc-200 p-3 max-w-sm">
                 <div className="text-[10px] font-semibold text-zinc-500 mb-1.5 flex items-center justify-between">
-                  <span>✉️ KVKSHR</span>
-                  <span>{fmtTime()}</span>
+                  <span>KVKSHR</span>
+                  <span>{smsTime}</span>
                 </div>
                 <div className="rounded-lg rounded-tl-none bg-white shadow-sm px-3 py-2 text-[13px] leading-snug text-zinc-800">
                   KisanVaani: Namaste! Apni fasal ki photo bhejein aur turant salah paayein:{" "}
@@ -877,16 +882,14 @@ export default function WhatsAppClient() {
                 </div>
               </div>
               <p className="text-xs text-ink-soft mt-3">
-                A single DLT-registered SMS puts the WhatsApp link on any ₹1,500 handset — the farmer taps it on their
-                own (or the village sahayak&rsquo;s) smartphone.
+                A DLT-registered SMS carries the WhatsApp link to any handset, including basic feature phones. The
+                farmer opens it on their own smartphone or the village sahayak&rsquo;s.
               </p>
             </div>
 
             {/* 2 · live wa.me deep link */}
             <div className="rounded-2xl bg-white border border-forest/15 p-5">
-              <div className="text-xs font-bold tracking-widest text-ink-soft mb-3">
-                2 · LIVE TODAY — REAL WHATSAPP DEEP LINK
-              </div>
+              <div className="text-xs font-semibold text-ink-soft mb-3">2. Live WhatsApp deep link</div>
               <a
                 href="https://wa.me/?text=Namaste%20KisanVaani"
                 target="_blank"
@@ -901,36 +904,31 @@ export default function WhatsAppClient() {
                 <ExternalLink className="w-4 h-4 opacity-80" />
               </a>
               <p className="text-xs text-ink-soft mt-3">
-                Verified working: <code className="bg-paper-warm px-1 rounded">wa.me</code> click-to-chat opens real
-                WhatsApp with a prefilled message — zero signup, works on any judge&rsquo;s phone or desktop right now.
+                The <code className="bg-paper-warm px-1 rounded">wa.me</code> click-to-chat link opens WhatsApp with a
+                prefilled message. No signup is required, and it works on any phone or desktop.
               </p>
             </div>
 
             {/* 3 · production path */}
             <div className="rounded-2xl bg-forest text-paper p-6">
-              <div className="text-xs font-bold tracking-widest text-leaf-mist/80 mb-3">
-                3 · PRODUCTION PATH — WHY THIS IS SIMULATED TODAY
+              <div className="text-xs font-semibold text-leaf-mist/80 mb-3">
+                3. Production path — why this page is simulated
               </div>
               <p className="text-sm leading-relaxed">
-                Production runs on the <b>Meta WhatsApp Business Cloud API</b> (
-                <span className="font-mono text-[12px] text-leaf-mist">
-                  POST graph.facebook.com/v23.0/&#123;PHONE_ID&#125;/messages
-                </span>
-                ) — inbound farmer photos and OPUS voice notes arrive via webhook and feed straight into the same
-                Gemini pipeline you see here. Meta&rsquo;s free <b>test number is demo-poison</b>: it can only message 5
-                OTP-verified phones (judges can never reach it) and its token expires every 24h — so we simulate the UI
-                pixel-for-pixel and ship the live wa.me link instead. The SMS invite needs India&rsquo;s{" "}
-                <b>TRAI DLT registration</b>: entity (~₹5,900, 3–7 days) + sender header + template approval, plus
-                mandatory URL whitelisting since Oct 2024 — about 1–2 weeks to the first compliant link-bearing SMS at
-                ~₹0.15–0.30 per message.
+                Production runs on the <b>Meta WhatsApp Business Cloud API</b>: inbound farmer photos and OPUS voice
+                notes arrive via webhook and feed the same Gemini pipeline shown here. Meta&rsquo;s free test number can
+                message only five OTP-verified phones and its token expires every 24 hours, so this page simulates the
+                interface and provides the live wa.me link instead. The SMS invite requires TRAI DLT registration
+                (entity, sender header, and template approval), which takes roughly one to two weeks and costs about
+                ₹0.15–0.30 per message.
               </p>
             </div>
 
             {/* try-it hints */}
             <div className="rounded-2xl bg-white border border-forest/15 p-5 text-sm text-ink-soft">
-              <b className="text-ink">Try it:</b> tap 📎 and upload a leaf photo → diagnosis card + voice note back. Or
-              hold the green mic and ask in your language — the reply comes back spoken in the language it detected.
-              The thread persists for your session, exactly like a real chat.
+              <b className="text-ink">To try it:</b> use the paperclip to upload a leaf photo, and the diagnosis
+              returns as a card and a voice note. Or hold the mic and ask in your own language; the reply is spoken in
+              the language detected. The thread persists for the duration of your session.
             </div>
           </div>
         </div>

@@ -2,7 +2,24 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, ChevronDown, LocateFixed, MapPin, Volume2 } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronDown,
+  CloudRain,
+  Droplet,
+  Droplets,
+  FileText,
+  LocateFixed,
+  MapPin,
+  Snowflake,
+  Sprout,
+  Sun,
+  TriangleAlert,
+  Volume2,
+  Waves,
+  WifiOff,
+  type LucideIcon,
+} from "lucide-react";
 import { DISTRICTS, type District } from "@/lib/districts";
 import { irrigationAdvice } from "@/lib/irrigation";
 import { speak, stopSpeaking } from "@/lib/speech";
@@ -20,24 +37,24 @@ type ProfileData = {
 type Season = "Kharif" | "Rabi" | "Zaid";
 type Phase = "form" | "results";
 
-const SEASONS: { id: Season; icon: string; hi: string; months: string }[] = [
-  { id: "Kharif", icon: "🌧️", hi: "खरीफ", months: "Jun–Oct" },
-  { id: "Rabi", icon: "❄️", hi: "रबी", months: "Nov–Mar" },
-  { id: "Zaid", icon: "☀️", hi: "ज़ायद", months: "Apr–Jun" },
+const SEASONS: { id: Season; icon: LucideIcon; hi: string; months: string }[] = [
+  { id: "Kharif", icon: CloudRain, hi: "खरीफ", months: "Jun–Oct" },
+  { id: "Rabi", icon: Snowflake, hi: "रबी", months: "Nov–Mar" },
+  { id: "Zaid", icon: Sun, hi: "ज़ायद", months: "Apr–Jun" },
 ];
 
-const WATER_OPTIONS: { id: WaterSource; icon: string; en: string; hi: string }[] = [
-  { id: "rainfed", icon: "🌧️", en: "Rainfed", hi: "सिर्फ बारिश" },
-  { id: "canal", icon: "🌊", en: "Canal", hi: "नहर" },
-  { id: "borewell", icon: "🕳️", en: "Borewell", hi: "बोरवेल" },
-  { id: "drip", icon: "💧", en: "Drip", hi: "ड्रिप" },
+const WATER_OPTIONS: { id: WaterSource; icon: LucideIcon; en: string; hi: string }[] = [
+  { id: "rainfed", icon: CloudRain, en: "Rainfed", hi: "सिर्फ बारिश" },
+  { id: "canal", icon: Waves, en: "Canal", hi: "नहर" },
+  { id: "borewell", icon: Droplet, en: "Borewell", hi: "बोरवेल" },
+  { id: "drip", icon: Droplets, en: "Drip", hi: "ड्रिप" },
 ];
 
 const LOAD_STAGES = [
-  "Reading satellite soil grids (ISRIC 250m)…",
+  "Reading satellite soil grids (ISRIC, 250 m)…",
   "Checking Soil Health Card records…",
   "Fetching 16-day forecast (Open-Meteo)…",
-  "Gemini is reasoning over ICAR agronomy…",
+  "Applying ICAR agronomy (Gemini)…",
 ];
 
 function defaultSeason(): Season {
@@ -232,21 +249,24 @@ export default function RecommendClient() {
 
   const soilBadge =
     soil?.source === "shc-manual"
-      ? "🇮🇳 Soil Health Card — Govt of India"
+      ? "Soil Health Card · Government of India"
       : soil?.source === "soilgrids"
-        ? "🛰 ISRIC SoilGrids (satellite)"
-        : "📍 Regional estimate (get a Soil Health Card test)";
-  const weatherBadge = weather?.source === "open-meteo" ? "🌐 Open-Meteo" : "📁 Cached forecast";
+        ? "ISRIC SoilGrids · satellite"
+        : "Regional estimate · Soil Health Card test recommended";
+  const weatherBadge = weather?.source === "open-meteo" ? "Open-Meteo" : "Cached forecast";
 
   return (
     <div className="min-h-screen">
       {/* Nav */}
       <nav className="border-b border-forest/10 bg-paper/90 backdrop-blur sticky top-0 z-20">
         <div className="mx-auto max-w-6xl px-4 h-14 flex items-center justify-between">
-          <Link href="/" className="font-display text-xl font-semibold text-forest">🌾 KisanVaani</Link>
+          <Link href="/" className="flex items-center gap-2 font-display text-xl font-semibold text-forest">
+            <Sprout className="w-[18px] h-[18px] text-forest" aria-hidden />
+            KisanVaani
+          </Link>
           <div className="flex items-center gap-4 text-sm">
-            <Link href="/demo" className="text-ink-soft hover:text-forest">Farmer Demo</Link>
-            <Link href="/command" className="text-ink-soft hover:text-forest hidden sm:inline">Command Center</Link>
+            <Link href="/demo" className="text-ink-soft hover:text-forest">Farmer demo</Link>
+            <Link href="/command" className="text-ink-soft hover:text-forest hidden sm:inline">Command center</Link>
           </div>
         </div>
       </nav>
@@ -255,8 +275,8 @@ export default function RecommendClient() {
         <header className="mb-6">
           <h1 className="font-display text-3xl font-semibold text-forest">क्या बोऊँ? — Crop Advisor</h1>
           <p className="text-ink-soft mt-1 max-w-2xl">
-            Satellite soil grids + your <strong>Soil Health Card</strong> + a 16-day forecast + live mandi prices —
-            reasoned over ICAR agronomy into ranked recommendations for <strong>your exact plot</strong>.
+            Ranked crop recommendations for your plot, built from satellite soil grids, Soil Health Card records,
+            a 16-day forecast and current mandi prices, applied against ICAR agronomy.
           </p>
         </header>
 
@@ -285,11 +305,11 @@ export default function RecommendClient() {
                 </div>
                 <button
                   onClick={useMyLocation}
+                  aria-label="Use my location"
                   className="shrink-0 flex items-center gap-1.5 rounded-xl border border-forest/25 px-3 py-2.5 text-sm font-medium text-forest hover:bg-leaf-mist/50 transition"
                 >
                   <LocateFixed className={`w-4 h-4 ${geoState === "locating" ? "blink" : ""}`} aria-hidden />
-                  <span className="hidden sm:inline">{geoState === "locating" ? "Locating…" : "📍 Use my location"}</span>
-                  <span className="sm:hidden">📍</span>
+                  <span className="hidden sm:inline">{geoState === "locating" ? "Locating…" : "Use my location"}</span>
                 </button>
               </div>
               {listOpen && matches.length > 0 && (
@@ -325,7 +345,7 @@ export default function RecommendClient() {
                     season === s.id ? "bg-forest text-paper border-forest" : "bg-white border-forest/15 hover:border-forest/40"
                   }`}
                 >
-                  <div className="text-lg">{s.icon}</div>
+                  <s.icon className={`w-4 h-4 mx-auto mb-1 ${season === s.id ? "text-paper" : "text-ink-soft"}`} aria-hidden />
                   <div className="text-sm font-semibold">{s.id} · {s.hi}</div>
                   <div className={`text-[11px] ${season === s.id ? "text-paper/70" : "text-ink-soft"}`}>{s.months}</div>
                 </button>
@@ -343,7 +363,7 @@ export default function RecommendClient() {
                     water === w.id ? "bg-forest text-paper border-forest" : "bg-white border-forest/15 hover:border-forest/40"
                   }`}
                 >
-                  <div className="text-lg">{w.icon}</div>
+                  <w.icon className={`w-4 h-4 mx-auto mb-1 ${water === w.id ? "text-paper" : "text-ink-soft"}`} aria-hidden />
                   <div className="text-sm font-semibold">{w.en}</div>
                   <div className={`text-[11px] ${water === w.id ? "text-paper/70" : "text-ink-soft"}`}>{w.hi}</div>
                 </button>
@@ -370,7 +390,16 @@ export default function RecommendClient() {
                 onClick={() => setShcOpen((o) => !o)}
                 className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-ink"
               >
-                <span>🇮🇳 I have my Soil Health Card {shcEntered && <span className="text-leaf">✓ entered</span>}</span>
+                <span className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-ink-soft" aria-hidden />
+                  I have my Soil Health Card
+                  {shcEntered && (
+                    <span className="flex items-center gap-1 text-leaf">
+                      <CheckCircle2 className="w-3.5 h-3.5" aria-hidden />
+                      entered
+                    </span>
+                  )}
+                </span>
                 <ChevronDown className={`w-4 h-4 transition-transform ${shcOpen ? "rotate-180" : ""}`} aria-hidden />
               </button>
               {shcOpen && (
@@ -397,7 +426,7 @@ export default function RecommendClient() {
                     ))}
                   </div>
                   <div className="text-[11px] text-ink-soft mt-2">
-                    from your SHC card — overrides satellite estimates
+                    Values from your Soil Health Card override the satellite estimates.
                   </div>
                 </div>
               )}
@@ -408,16 +437,16 @@ export default function RecommendClient() {
               disabled={!sel}
               className="mt-6 w-full rounded-xl bg-forest text-paper py-3.5 font-semibold text-base hover:bg-leaf transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              🌱 फसल सुझाव पाएं · Get recommendations
+              फसल सुझाव पाएं · Get recommendations
             </button>
-            {!sel && <div className="text-[11px] text-ink-soft text-center mt-2">pick your district first</div>}
+            {!sel && <div className="text-[11px] text-ink-soft text-center mt-2">Select your district to continue.</div>}
           </div>
         )}
 
         {phase === "results" && (
           <div>
             <button onClick={backToForm} className="text-sm text-ink-soft hover:text-forest mb-4">
-              ← Change details {sel && <span className="text-forest font-medium">· {sel.district}, {sel.state} · {season} · {WATER_OPTIONS.find((w) => w.id === water)?.en}</span>}
+              Change details {sel && <span className="text-forest font-medium">· {sel.district}, {sel.state} · {season} · {WATER_OPTIONS.find((w) => w.id === water)?.en}</span>}
             </button>
 
             <div className="grid lg:grid-cols-[minmax(0,340px)_1fr] gap-6 items-start">
@@ -425,14 +454,14 @@ export default function RecommendClient() {
               <div className="space-y-4">
                 {!soil && (
                   <div className="rounded-2xl bg-white border border-forest/15 p-5 text-sm text-ink-soft blink">
-                    🛰 Reading your land from orbit…
+                    Reading soil data for your district…
                   </div>
                 )}
 
                 {soil && (
                   <div className="rounded-2xl bg-white border border-forest/15 p-5 shadow-sm rise">
                     <div className="flex items-start justify-between gap-2 mb-3">
-                      <h2 className="font-semibold text-forest">🧪 Your soil · आपकी मिट्टी</h2>
+                      <h2 className="font-semibold text-forest">आपकी मिट्टी · Your soil</h2>
                       <span className="text-[10px] font-semibold bg-leaf-mist text-forest rounded-full px-2 py-1 whitespace-nowrap">{soilBadge}</span>
                     </div>
 
@@ -512,7 +541,7 @@ export default function RecommendClient() {
 
                     {profile?.shcNote && (
                       <div className="mt-3 rounded-lg bg-leaf-mist/50 border border-leaf/20 px-3 py-2 text-xs text-forest">
-                        🇮🇳 {profile.shcNote}
+                        {profile.shcNote}
                       </div>
                     )}
                   </div>
@@ -521,7 +550,7 @@ export default function RecommendClient() {
                 {weather && (
                   <div className="rounded-2xl bg-white border border-forest/15 p-5 shadow-sm rise">
                     <div className="flex items-start justify-between gap-2 mb-3">
-                      <h2 className="font-semibold text-forest">🌦 16-day outlook</h2>
+                      <h2 className="font-semibold text-forest">16-day outlook</h2>
                       <span className="text-[10px] font-semibold bg-sky/10 text-sky rounded-full px-2 py-1 whitespace-nowrap">{weatherBadge}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
@@ -552,7 +581,7 @@ export default function RecommendClient() {
                     }`}
                   >
                     <div className="text-xs font-bold tracking-wide text-ink-soft mb-1.5">
-                      💧 सिंचाई सलाह · IRRIGATION GUIDANCE — {topCrop}
+                      सिंचाई सलाह · Irrigation guidance · {topCrop}
                     </div>
                     <p className="text-sm font-medium leading-relaxed">{irr.advice}</p>
                     <p className="text-[11px] text-ink-soft mt-2 leading-relaxed">{irr.reasoning}</p>
@@ -584,8 +613,8 @@ export default function RecommendClient() {
 
                 {recFailed && (
                   <div className="rounded-2xl bg-white border border-forest/15 p-6 text-center">
-                    <div className="text-2xl mb-2">📡</div>
-                    <div className="text-sm text-ink-soft mb-3">Network hiccup while building the recommendation.</div>
+                    <WifiOff className="w-5 h-5 mx-auto text-ink-soft mb-2" aria-hidden />
+                    <div className="text-sm text-ink-soft mb-3">The recommendation could not be fetched. Check your connection and try again.</div>
                     <button onClick={run} className="rounded-xl bg-forest text-paper px-5 py-2.5 text-sm font-semibold hover:bg-leaf transition">
                       Try again
                     </button>
@@ -599,7 +628,7 @@ export default function RecommendClient() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="text-xs font-bold tracking-widest text-leaf-mist/80">VOICE SUMMARY — फोन पर किसान को यही सुनाया जाता है</div>
                         <span className="text-[10px] whitespace-nowrap text-leaf-mist/70">
-                          {rec.source === "gemini" ? "⚡ Live Gemini" : "📁 Offline engine"}
+                          {rec.source === "gemini" ? "Gemini · live" : "Generated offline"}
                         </span>
                       </div>
                       <p className="text-sm leading-relaxed mt-2">{rec.summaryVoice}</p>
@@ -608,7 +637,7 @@ export default function RecommendClient() {
                         className="mt-3 inline-flex items-center gap-2 rounded-full bg-paper/15 hover:bg-paper/25 px-4 py-2 text-sm font-medium transition"
                       >
                         <Volume2 className="w-4 h-4" aria-hidden />
-                        {speaking ? "⏹ रोकें" : "🔊 सुनें (हिन्दी)"}
+                        {speaking ? "रोकें · Stop" : "सुनें · Listen (Hindi)"}
                       </button>
                     </div>
 
@@ -628,11 +657,11 @@ export default function RecommendClient() {
                                 <h3 className="font-display text-xl font-semibold text-forest">{r.crop}</h3>
                                 <span className="text-sm text-ink-soft">{r.localName}</span>
                                 {i === 0 && (
-                                  <span className="text-[10px] font-bold bg-turmeric-soft/50 text-clay rounded-full px-2 py-0.5">⭐ BEST MATCH</span>
+                                  <span className="text-[10px] font-bold bg-turmeric-soft/50 text-clay rounded-full px-2 py-0.5">Best match</span>
                                 )}
                               </div>
                               <div className="flex items-center gap-1.5 flex-wrap mt-1 text-[11px]">
-                                <span className="bg-paper-warm rounded-full px-2 py-0.5">🗓 {r.season}</span>
+                                <span className="bg-paper-warm rounded-full px-2 py-0.5">{r.season}</span>
                                 <span
                                   className={`rounded-full px-2 py-0.5 ${
                                     r.waterNeed === "low"
@@ -642,9 +671,9 @@ export default function RecommendClient() {
                                         : "bg-sky/10 text-sky"
                                   }`}
                                 >
-                                  💧 {r.waterNeed} water
+                                  {r.waterNeed} water
                                 </span>
-                                <span className="bg-paper-warm rounded-full px-2 py-0.5">⏱ {r.durationDays} days</span>
+                                <span className="bg-paper-warm rounded-full px-2 py-0.5">{r.durationDays} days</span>
                               </div>
                             </div>
                           </div>
@@ -665,7 +694,7 @@ export default function RecommendClient() {
                         </div>
 
                         <div className="mt-3 text-sm">
-                          <span className="font-semibold text-ink">📈 {r.expectedYield}</span>
+                          <span className="font-semibold text-ink">{r.expectedYield}</span>
                           {r.marketOutlook && <span className="text-ink-soft"> · {r.marketOutlook}</span>}
                         </div>
 
@@ -683,7 +712,10 @@ export default function RecommendClient() {
                         {r.risks.length > 0 && (
                           <details className="mt-3 group">
                             <summary className="text-xs font-semibold text-clay cursor-pointer select-none">
-                              ⚠️ Risks to watch ({r.risks.length})
+                              <span className="inline-flex items-center gap-1.5">
+                                <TriangleAlert className="w-3.5 h-3.5" aria-hidden />
+                                Risks to watch ({r.risks.length})
+                              </span>
                             </summary>
                             <ul className="mt-2 space-y-1 text-xs text-ink-soft">
                               {r.risks.map((risk, k) => (
@@ -698,15 +730,15 @@ export default function RecommendClient() {
 
                         <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                           <div className="rounded-lg bg-paper-warm px-3 py-2">
-                            <div className="text-[10px] font-bold text-ink-soft mb-0.5">🌱 SEED</div>
+                            <div className="text-[10px] font-bold text-ink-soft mb-0.5">SEED</div>
                             {r.inputs.seed}
                           </div>
                           <div className="rounded-lg bg-paper-warm px-3 py-2">
-                            <div className="text-[10px] font-bold text-ink-soft mb-0.5">🧪 FERTILIZER</div>
+                            <div className="text-[10px] font-bold text-ink-soft mb-0.5">FERTILIZER</div>
                             {r.inputs.fertilizer}
                           </div>
                           <div className="rounded-lg bg-paper-warm px-3 py-2">
-                            <div className="text-[10px] font-bold text-ink-soft mb-0.5">💧 IRRIGATION</div>
+                            <div className="text-[10px] font-bold text-ink-soft mb-0.5">IRRIGATION</div>
                             {r.inputs.irrigation}
                           </div>
                         </div>
@@ -716,8 +748,8 @@ export default function RecommendClient() {
                 )}
 
                 <div className="text-[11px] text-ink-soft text-center pt-2 pb-6">
-                  Data: ISRIC SoilGrids · Soil Health Card (GoI) · Open-Meteo · Agmarknet · Grounded in ICAR/SAU Package of
-                  Practices + FAO-56
+                  Data sources: ISRIC SoilGrids, Soil Health Card (Government of India), Open-Meteo, Agmarknet.
+                  Agronomy grounded in ICAR/SAU Package of Practices and FAO-56.
                 </div>
               </div>
             </div>
@@ -764,13 +796,13 @@ function MandiStrip({ crop, state }: { crop: string; state: string }) {
   return (
     <div className="mt-3 rounded-xl bg-leaf-mist/40 border border-leaf/25 px-3.5 py-2.5 text-sm">
       {loading ? (
-        <span className="text-ink-soft blink">📈 Fetching live mandi price (Agmarknet)…</span>
+        <span className="text-ink-soft blink">Fetching current mandi price (Agmarknet)…</span>
       ) : (
         row && (
           <span>
             <b className="text-forest">₹{row.modalPrice.toLocaleString("en-IN")}/q</b>
             <span className="text-ink-soft"> modal · {row.market} mandi · {row.arrivalDate === todayDdMmYyyy() ? "today" : row.arrivalDate} · </span>
-            <span className="text-[11px] font-semibold">{source === "agmarknet" ? "⚡ Agmarknet live" : "📁 Agmarknet (cached)"}</span>
+            <span className="text-[11px] font-semibold">{source === "agmarknet" ? "Agmarknet · live" : "Agmarknet · cached"}</span>
           </span>
         )
       )}

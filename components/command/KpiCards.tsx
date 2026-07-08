@@ -64,7 +64,7 @@ export default function KpiCards() {
     {
       label: "Median AI response",
       value: `${k.medianResponseSec}s`,
-      sub: <span className="text-slate-500">voice call, query → advisory</span>,
+      sub: <span className="text-slate-500">voice call, query to advisory</span>,
       icon: <Timer className="size-4 text-slate-300" aria-hidden="true" />,
     },
   ];

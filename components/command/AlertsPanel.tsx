@@ -35,7 +35,7 @@ export default function AlertsPanel({ district, onCompose }: {
       setData(json);
     } catch (err) {
       console.error("alerts fetch failed, using cached scan", err);
-      setData(CACHED_ALERTS); // graceful degrade — never an error state for judges
+      setData(CACHED_ALERTS); // graceful degrade to the cached scan; the console never shows a dead end
     } finally {
       setLoading(false);
     }

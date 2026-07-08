@@ -190,7 +190,7 @@ export default function EscalationsPanel({ district, tickets, onUpdate }: {
         )}
       </SectionCard>
       <p className="text-[11px] text-slate-400">
-        Escalation fabric: AP Rythu Seva Kendras (10,778) · Telangana AEO clusters (2,601) · ICAR KVKs (731) · Kisan Sarathi / KCC 1800-180-1551 (production integration)
+        Escalation network: AP Rythu Seva Kendras (10,778) · Telangana AEO clusters (2,601) · ICAR KVKs (731) · Kisan Sarathi / KCC 1800-180-1551 (production integration)
       </p>
     </div>
   );

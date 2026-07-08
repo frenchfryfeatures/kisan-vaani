@@ -64,7 +64,7 @@ export default function Sidebar({ tab, onTab, badges }: {
           Farmer site
         </a>
         <p className="px-2.5 pb-1 pt-1.5 text-[10px] leading-relaxed text-slate-400">
-          Escalation fabric: 10,778 AP RSKs · 2,601 TS AEO clusters · 731 KVKs · KCC 1800-180-1551
+          Escalation network: 10,778 AP RSKs · 2,601 TS AEO clusters · 731 KVKs · KCC 1800-180-1551
         </p>
       </div>
     </aside>

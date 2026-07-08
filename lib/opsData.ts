@@ -1,5 +1,5 @@
 // Ops command-center seed data — deterministic, typed, embedded.
-// Kendra names are REAL (verified in research/rsk-escalation.json):
+// Kendra names are real (verified in research/rsk-escalation.json):
 //   - Rythu Seva Kendras (RSK) = Andhra Pradesh's 10,778 gram-panchayat centres (VAA-staffed)
 //   - AEO Clusters = Telangana's 2,601 extension clusters (Ichoda, Gudi Hathnur, Sirikonda verified)
 //   - KVKs = 731 district Krishi Vigyan Kendras (KVK Sehore/Sewania, KVK Ramnagar Adilabad, KVK Kampasagar…)
