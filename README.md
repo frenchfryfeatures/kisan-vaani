@@ -19,6 +19,12 @@ India has more than 146 million farm holdings; 86% are smallholders. Roughly 45%
 
 The operations console at `/command` serves the District Agriculture Officer and the MP's office: KPIs, weather-alert composer, disease-outbreak clusters, escalation queue, broadcast log, and farmer registry.
 
+## Live telephony and persistence
+
+A real Twilio line is connected to the deployed instance: **+1 254 272 6372**. Inbound calls reach a stateless TwiML IVR (`/api/telephony/voice`) — a Hindi greeting, speech capture, a Gemini-generated spoken advisory, and a mandi-price option; inbound SMS (`/api/telephony/sms`) returns a native-script advisory; the WhatsApp webhook (`/api/telephony/whatsapp`) handles photo diagnosis via Twilio media. All webhooks validate Twilio's HMAC-SHA1 signature and degrade to reviewed fallback advisories on any upstream failure. It is a US trial number (a Twilio notice plays first; international rates apply from India); the production path is an Indian toll-free line via Exotel with DLT-registered SMS — see `docs/TELEPHONY.md`.
+
+Escalation tickets, broadcasts, and the query log persist to Postgres (`kv_tickets`, `kv_broadcasts`, `kv_queries`). Farmer referrals from the demo and WhatsApp flows create real tickets that appear in the operations queue with SLA tracking; every advisory, diagnosis, voice, and telephony interaction is logged and surfaces in the console's live feed. Without `DATABASE_URL`, all of it degrades to per-instance memory so the application still runs.
+
 ## Data sources
 
 - Soil Health Card (soilhealth.dac.gov.in) — district N/P/K/OC/pH and micronutrient distributions; GraphQL; updated daily
