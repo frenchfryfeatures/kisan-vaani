@@ -66,9 +66,12 @@ Every API route falls back to cached, expert-written data if a live source is un
 
 ```bash
 npm install
-echo "GEMINI_API_KEY=your_key" > .env.local   # aistudio.google.com; free tier is sufficient
+cp .env.example .env.local   # fill in GEMINI_API_KEY at minimum (aistudio.google.com)
 npm run dev -- -p 3100
 ```
+
+Full key/service reference, deployment steps, phone-number wiring, and
+environment verification commands: [docs/SETUP.md](docs/SETUP.md).
 
 ## Pilot plan
 
