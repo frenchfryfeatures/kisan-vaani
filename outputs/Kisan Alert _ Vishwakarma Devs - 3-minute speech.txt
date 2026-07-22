@@ -1,0 +1,56 @@
+KISAN ALERT _ VISHWAKARMA DEVS
+STAGE SCRIPT — EXACTLY THREE SLIDES
+
+Target pace: 115–120 words per minute with the marked pauses. Rehearse once with a timer; do not add an introduction.
+
+SLIDE 1 — 0:00–0:55
+
+Honourable Members, this challenge did not begin in a lab. Code for Communities connected six MPs and builders around four constituency-submitted problems. Kisan Alert came from Narasaraopet farmers.
+
+The gap is national: India has 14.65 crore operational holdings; 86 percent are small or marginal. In the 2019 NSS survey, only 48.7 percent of agricultural households accessed technical advice—yet 89.5 percent of recipients adopted it. Average monthly income was ₹10,218, with ₹3,798 from crops. Pests, diseases and weeds cause about 30 percent average yield loss.
+
+Farmers act on advice. The bottleneck is getting the right advice to the right plot in time.
+
+SLIDE 2 — 0:55–2:05
+
+KisanVaani closes that loop. A farmer can call, text, WhatsApp or share a crop photo in her own language. We combine crop and location with soil, Soil Health Card, sixteen-day weather, mandi prices and agronomy before AI answers.
+
+A confidence and risk gate prevents bluffing: clear cases get one next action; high-risk or uncertain cases go to RSK, KVK or Kisan Call Centre experts.
+
+Every interaction is structured. Five matching reports within a radius and seven days create a possible cluster. An officer verifies it before a targeted alert goes out.
+
+This is deployed: twelve farmer-interface languages, fourteen crops and four live data rails.
+
+We complement government. Kisan Sarathi already connects 2.95 crore farmers, 730-plus KVKs and 4,767 scientists. KisanVaani adds the configurable local loop: any-phone intake, structured triage and pattern detection.
+
+SLIDE 3 — 2:05–3:00
+
+Our ask is one block, one crop and one crop cycle in Narasaraopet—not a new scheme.
+
+Your office unlocks the roster and consent, official IVR and SMS, a nodal officer, KVK or RSK experts and a district review slot. We bring Telugu onboarding, local configuration, safety rules, a weekly dashboard and an endline report.
+
+The public scorecard measures reach, useful-advice time, expert resolution, cluster false positives, alerts acted on within forty-eight hours and cost per useful action. No invented yield claim.
+
+If one cycle proves value, replicate across the district and seek integration with Kisan Sarathi, KCC and NPSS. If it does not, publish that too.
+
+Nominate the block—and judge the evidence. Dhanyavaad.
+
+DELIVERY CUES
+
+- Slide 1: point once to Shri Lavu’s quote, then let the four statistics carry the argument. Do not read every source line.
+- Slide 2: move left to right through Access → Ground → Guard → Learn. Pause before the Kisan Sarathi band.
+- Slide 3: slow down for the pilot inputs and the public scorecard. End on “judge the evidence,” not on the technology.
+- If over time, remove the sentence beginning “Average monthly income was…” Do not rush the final ask.
+
+SOURCES
+
+- Official Code for Communities initiative, problem context and Narasaraopet MP quote:
+  https://hack2skill.com/event/codeforcommunities
+- Agriculture Census / Parliament:
+  https://rsdebate.nic.in/bitstream/123456789/707161/1/PQ_250_29112019_U1293_p135_p141.pdf
+- NSS Situation Assessment 2019:
+  https://www.mospi.gov.in/sites/default/files/publication_reports/Report_587m_0.pdf
+- ICAR Doubling Farmers' Income compilation:
+  https://www.icar.gov.in/sites/default/files/2022-06/Doubling-of-Farmers-Income-updated-092020-min.pdf
+- Kisan Sarathi scale figures, PIB, 29 June 2026:
+  https://www.pib.gov.in/PressReleasePage.aspx?PRID=2278757&lang=2&reg=48

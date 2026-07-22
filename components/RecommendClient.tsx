@@ -203,7 +203,7 @@ export default function RecommendClient() {
           ...(buildShc() ? { shc: buildShc() } : {}),
           lang: "hi",
         }),
-        signal: AbortSignal.timeout(60000),
+        signal: AbortSignal.timeout(90000),
       });
       const data = (await res.json()) as RecommendResponse;
       if (runIdRef.current !== id) return;
